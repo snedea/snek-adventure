@@ -12,7 +12,23 @@ local PROMPT_TIMEOUT = 10 -- Seconds to accept/decline
 function ReviveService:OfferRevival(player, PlayerDataManager, SnakeManager, ShieldManager, RankService)
 	-- Check if player has donuts
 	local donuts = PlayerDataManager:GetDonuts(player)
+	
 	if donuts <= 0 then
+		-- No donuts - auto respawn after delay
+		local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
+		if remoteEvent then
+			remoteEvent:FireClient(player, "ShowRevivePrompt", 0)
+		end
+		
+		task.wait(3)
+		
+		-- Auto-respawn
+		SnakeManager:CreateSnake(player)
+		local rank = PlayerDataManager:GetRank(player)
+		local shieldDuration = RankService:GetShieldDuration(rank)
+		ShieldManager:ActivateShield(player, shieldDuration)
+		
+		print(string.format("[ReviveService] %s auto-respawned (no donuts)", player.Name))
 		return false
 	end
 
@@ -85,6 +101,7 @@ end
 -- Declines revival
 function ReviveService:DeclineRevival(player)
 	if self._activePrompts[player] then
+		local prompt = self._activePrompts[player]
 		self._activePrompts[player] = nil
 
 		-- Notify client
@@ -93,7 +110,14 @@ function ReviveService:DeclineRevival(player)
 			remoteEvent:FireClient(player, "HideRevivePrompt")
 		end
 
-		print(string.format("[ReviveService] %s declined revival", player.Name))
+		-- Auto-respawn after declining
+		task.wait(1)
+		prompt.SnakeManager:CreateSnake(player)
+		local rank = prompt.PlayerDataManager:GetRank(player)
+		local shieldDuration = prompt.RankService:GetShieldDuration(rank)
+		prompt.ShieldManager:ActivateShield(player, shieldDuration)
+
+		print(string.format("[ReviveService] %s declined revival - auto-respawned", player.Name))
 	end
 end
 

@@ -29,6 +29,12 @@
         "$path": "src/ServerScriptService/GameInitializer.server.lua"
       }
     },
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "Maps": {
+        "$path": "src/ServerStorage/Maps"
+      }
+    },
     "StarterPlayer": {
       "$className": "StarterPlayer",
       "StarterPlayerScripts": {

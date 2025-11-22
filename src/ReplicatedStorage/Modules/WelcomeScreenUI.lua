@@ -74,16 +74,73 @@ function WelcomeScreenUI.Show()
 		subtitle.TextColor3 = Color3.fromRGB(200, 200, 200)
 		subtitle.TextSize = 24
 		subtitle.Parent = screenGui
+	
+		-- Map Selection Section
+		local mapTitle = Instance.new("TextLabel")
+		mapTitle.Name = "MapTitle"
+		mapTitle.Size = UDim2.new(0, 600, 0, 25)
+		mapTitle.Position = UDim2.new(0.5, -300, 0.62, 0)
+		mapTitle.BackgroundTransparency = 1
+		mapTitle.Font = Enum.Font.GothamBold
+		mapTitle.Text = "Choose Your Arena"
+		mapTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+		mapTitle.TextSize = 18
+		mapTitle.Parent = screenGui
+	
+		local selectedMapName = "Classic"
+		local MapConfig = require(ReplicatedStorage.Modules.MapConfig)
+		local mapButtons = {}
+	
+		local mapContainer = Instance.new("Frame")
+		mapContainer.Name = "MapContainer"
+		mapContainer.Size = UDim2.new(0, 600, 0, 50)
+		mapContainer.Position = UDim2.new(0.5, -300, 0.66, 0)
+		mapContainer.BackgroundTransparency = 1
+		mapContainer.Parent = screenGui
+	
+		local mapLayout = Instance.new("UIListLayout")
+		mapLayout.FillDirection = Enum.FillDirection.Horizontal
+		mapLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		mapLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+		mapLayout.Padding = UDim.new(0, 15)
+		mapLayout.Parent = mapContainer
+	
+		for mapName, mapData in pairs(MapConfig.Maps) do
+			local mapButton = Instance.new("TextButton")
+			mapButton.Name = mapName .. "Button"
+			mapButton.Size = UDim2.new(0, 180, 0, 50)
+			mapButton.BackgroundColor3 = (mapName == selectedMapName) and Color3.fromRGB(80, 80, 100) or Color3.fromRGB(50, 50, 60)
+			mapButton.BorderSizePixel = 0
+			mapButton.Font = Enum.Font.GothamBold
+			mapButton.Text = mapData.Name
+			mapButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+			mapButton.TextSize = 16
+			mapButton.Parent = mapContainer
+		
+			local mapCorner = Instance.new("UICorner")
+			mapCorner.CornerRadius = UDim.new(0, 8)
+			mapCorner.Parent = mapButton
+		
+			mapButtons[mapName] = mapButton
+		
+			mapButton.MouseButton1Click:Connect(function()
+				selectedMapName = mapName
+				-- Update all button colors
+				for name, btn in pairs(mapButtons) do
+					btn.BackgroundColor3 = (name == selectedMapName) and Color3.fromRGB(80, 80, 100) or Color3.fromRGB(50, 50, 60)
+				end
+			end)
+		end
 
 		local gridContainer = Instance.new("Frame")
 		gridContainer.Name = "GridContainer"
-		gridContainer.Size = UDim2.new(0, 900, 0, 450)
-		gridContainer.Position = UDim2.new(0.5, -450, 0.25, 0)
+		gridContainer.Size = UDim2.new(0, 900, 0, 320)
+		gridContainer.Position = UDim2.new(0.5, -450, 0.2, 0)
 		gridContainer.BackgroundTransparency = 1
 		gridContainer.Parent = screenGui
 
 		local gridLayout = Instance.new("UIGridLayout")
-		gridLayout.CellSize = UDim2.new(0, 170, 0, 200)
+		gridLayout.CellSize = UDim2.new(0, 140, 0, 150)
 		gridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
 		gridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 		gridLayout.VerticalAlignment = Enum.VerticalAlignment.Top
@@ -204,8 +261,8 @@ function WelcomeScreenUI.Show()
 
 		local playButton = Instance.new("TextButton")
 		playButton.Name = "PlayButton"
-		playButton.Size = UDim2.new(0, 300, 0, 60)
-		playButton.Position = UDim2.new(0.5, -150, 0.85, 0)
+		playButton.Size = UDim2.new(0, 300, 0, 55)
+		playButton.Position = UDim2.new(0.5, -150, 0.75, 0)
 		playButton.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
 		playButton.BorderSizePixel = 0
 		playButton.Font = Enum.Font.GothamBold
@@ -220,6 +277,7 @@ function WelcomeScreenUI.Show()
 
 		playButton.MouseButton1Click:Connect(function()
 			remoteEvent:FireServer("SelectSnakeVariant", selectedVariantId)
+			remoteEvent:FireServer("ChangeMap", selectedMapName)
 			screenGui:Destroy()
 			StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
 		end)

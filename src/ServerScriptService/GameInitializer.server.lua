@@ -8,8 +8,9 @@ local Players = game:GetService("Players")
 print("[GameInitializer] Starting Slither Simulator server...")
 
 -- Load services
+-- Load services
 local CharacterManager = require(ServerScriptService.GameSystems.CharacterManager)
-local ArenaBuilder = require(ServerScriptService.GameSystems.ArenaBuilder)
+local ArenaManager = require(ServerScriptService.GameSystems.ArenaManager)
 local PlayerDataManager = require(ServerScriptService.GameSystems.PlayerDataManager)
 local RankService = require(ServerScriptService.GameSystems.RankService)
 local ShieldManager = require(ServerScriptService.GameSystems.ShieldManager)
@@ -21,11 +22,11 @@ local ReviveService = require(ServerScriptService.GameSystems.ReviveService)
 -- Initialize services in dependency order
 CharacterManager:Initialize() -- Disable default characters first
 local arenaOk, arenaErr = pcall(function()
-	ArenaBuilder:Initialize() -- Create arena
+	ArenaManager:Initialize() -- Create arena via Manager
 end)
 
 if not arenaOk then
-	warn("[GameInitializer] ArenaBuilder failed to initialize:", arenaErr)
+	warn("[GameInitializer] ArenaManager failed to initialize:", arenaErr)
 end
 
 PlayerDataManager:Initialize()
@@ -94,6 +95,11 @@ remoteEvent.OnServerEvent:Connect(function(player, eventType, ...)
 		local topPlayers = LeaderboardService:GetTopPlayers(statName, scope, 10)
 		remoteEvent:FireClient(player, "LeaderboardData", topPlayers)
 
+	elseif eventType == "ChangeMap" then
+		local mapName = ...
+		print("[GameInitializer] Map change requested by", player.Name, ":", mapName)
+		ArenaManager:LoadMap(mapName)
+
 	else
 		warn("[GameInitializer] Unknown event type:", eventType)
 	end
@@ -111,6 +117,18 @@ end)
 
 -- Send initial data to players
 Players.PlayerAdded:Connect(function(player)
+	-- Chat commands for testing
+	player.Chatted:Connect(function(message)
+		print("[Chat] Player said:", message)
+		local args = string.split(message, " ")
+		if args[1] == "/map" and args[2] then
+			-- Capitalize first letter for matching
+			local mapName = args[2]:sub(1,1):upper() .. args[2]:sub(2):lower()
+			print("[Chat] Switching map to:", mapName)
+			ArenaManager:LoadMap(mapName)
+		end
+	end)
+
 	task.wait(2) -- Wait for client to load
 
 	local data = PlayerDataManager:GetData(player)

@@ -189,6 +189,29 @@ local FoodConfig = {
 			color = Color3.fromRGB(255, 100, 200),
 		},
 	},
+	
+	-- Power-ups
+	POWERUPS = {
+		SPEED = {
+			size = 5,
+			color = Color3.fromRGB(50, 255, 50), -- Green
+			duration = 10,
+			weight = 2,
+		},
+		MAGNET = {
+			size = 5,
+			color = Color3.fromRGB(50, 50, 255), -- Blue
+			duration = 15,
+			rangeMultiplier = 3,
+			weight = 2,
+		},
+		SHIELD = {
+			size = 5,
+			color = Color3.fromRGB(255, 255, 50), -- Yellow
+			duration = 5,
+			weight = 1,
+		},
+	},
 
 	-- Scatter (on snake death)
 	SCATTER_PERCENTAGE = 0.5, -- Percentage of snake value scattered
@@ -230,6 +253,59 @@ return FoodConfig
         </Properties>
       </Item>
       <Item class="ModuleScript" referent="4">
+        <Properties>
+          <string name="Name">MapConfig</string>
+          <string name="Source"><![CDATA[-- MapConfig.lua
+-- Configuration for different arena types
+
+local MapConfig = {
+	Maps = {
+		Classic = {
+			Name = "Classic Arena",
+			Description = "Standard open field.",
+			ArenaSize = Vector3.new(1000, 0, 1000),
+			WallColor = Color3.fromRGB(255, 50, 50),
+			FloorColor = Color3.fromRGB(20, 20, 20),
+			GridColor = Color3.fromRGB(40, 40, 40),
+			Physics = {
+				Friction = 1.0, -- Normal friction
+				TurnSpeedMultiplier = 1.0
+			}
+		},
+		Maze = {
+			Name = "The Maze",
+			Description = "Tight corridors and deadly walls.",
+			ArenaSize = Vector3.new(800, 0, 800),
+			WallColor = Color3.fromRGB(50, 255, 50),
+			FloorColor = Color3.fromRGB(10, 10, 30),
+			GridColor = Color3.fromRGB(30, 30, 60),
+			Physics = {
+				Friction = 1.0,
+				TurnSpeedMultiplier = 1.2 -- Sharper turns needed
+			}
+		},
+		Space = {
+			Name = "Zero-G",
+			Description = "Low friction, high drift.",
+			ArenaSize = Vector3.new(1200, 0, 1200),
+			WallColor = Color3.fromRGB(100, 200, 255),
+			FloorColor = Color3.fromRGB(0, 0, 10),
+			GridColor = Color3.fromRGB(50, 50, 100),
+			Physics = {
+				Friction = 0.1, -- Slippery!
+				TurnSpeedMultiplier = 0.8
+			}
+		}
+	},
+	
+	CurrentMap = "Classic" -- Default
+}
+
+return MapConfig
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="5">
         <Properties>
           <string name="Name">RankConfig</string>
           <string name="Source"><![CDATA[-- RankConfig.lua
@@ -294,7 +370,7 @@ return RankConfig
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="5">
+      <Item class="ModuleScript" referent="6">
         <Properties>
           <string name="Name">SnakeConfig</string>
           <string name="Source"><![CDATA[-- SnakeConfig.lua
@@ -341,7 +417,7 @@ return SnakeConfig
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="6">
+      <Item class="ModuleScript" referent="7">
         <Properties>
           <string name="Name">SnakeVariants</string>
           <string name="Source"><![CDATA[-- SnakeVariants.lua
@@ -497,7 +573,7 @@ return SnakeVariants
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="7">
+      <Item class="ModuleScript" referent="8">
         <Properties>
           <string name="Name">WelcomeScreenUI</string>
           <string name="Source"><![CDATA[-- WelcomeScreenUI.lua
@@ -576,16 +652,73 @@ function WelcomeScreenUI.Show()
 		subtitle.TextColor3 = Color3.fromRGB(200, 200, 200)
 		subtitle.TextSize = 24
 		subtitle.Parent = screenGui
+	
+		-- Map Selection Section
+		local mapTitle = Instance.new("TextLabel")
+		mapTitle.Name = "MapTitle"
+		mapTitle.Size = UDim2.new(0, 600, 0, 25)
+		mapTitle.Position = UDim2.new(0.5, -300, 0.62, 0)
+		mapTitle.BackgroundTransparency = 1
+		mapTitle.Font = Enum.Font.GothamBold
+		mapTitle.Text = "Choose Your Arena"
+		mapTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+		mapTitle.TextSize = 18
+		mapTitle.Parent = screenGui
+	
+		local selectedMapName = "Classic"
+		local MapConfig = require(ReplicatedStorage.Modules.MapConfig)
+		local mapButtons = {}
+	
+		local mapContainer = Instance.new("Frame")
+		mapContainer.Name = "MapContainer"
+		mapContainer.Size = UDim2.new(0, 600, 0, 50)
+		mapContainer.Position = UDim2.new(0.5, -300, 0.66, 0)
+		mapContainer.BackgroundTransparency = 1
+		mapContainer.Parent = screenGui
+	
+		local mapLayout = Instance.new("UIListLayout")
+		mapLayout.FillDirection = Enum.FillDirection.Horizontal
+		mapLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		mapLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+		mapLayout.Padding = UDim.new(0, 15)
+		mapLayout.Parent = mapContainer
+	
+		for mapName, mapData in pairs(MapConfig.Maps) do
+			local mapButton = Instance.new("TextButton")
+			mapButton.Name = mapName .. "Button"
+			mapButton.Size = UDim2.new(0, 180, 0, 50)
+			mapButton.BackgroundColor3 = (mapName == selectedMapName) and Color3.fromRGB(80, 80, 100) or Color3.fromRGB(50, 50, 60)
+			mapButton.BorderSizePixel = 0
+			mapButton.Font = Enum.Font.GothamBold
+			mapButton.Text = mapData.Name
+			mapButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+			mapButton.TextSize = 16
+			mapButton.Parent = mapContainer
+		
+			local mapCorner = Instance.new("UICorner")
+			mapCorner.CornerRadius = UDim.new(0, 8)
+			mapCorner.Parent = mapButton
+		
+			mapButtons[mapName] = mapButton
+		
+			mapButton.MouseButton1Click:Connect(function()
+				selectedMapName = mapName
+				-- Update all button colors
+				for name, btn in pairs(mapButtons) do
+					btn.BackgroundColor3 = (name == selectedMapName) and Color3.fromRGB(80, 80, 100) or Color3.fromRGB(50, 50, 60)
+				end
+			end)
+		end
 
 		local gridContainer = Instance.new("Frame")
 		gridContainer.Name = "GridContainer"
-		gridContainer.Size = UDim2.new(0, 900, 0, 450)
-		gridContainer.Position = UDim2.new(0.5, -450, 0.25, 0)
+		gridContainer.Size = UDim2.new(0, 900, 0, 320)
+		gridContainer.Position = UDim2.new(0.5, -450, 0.2, 0)
 		gridContainer.BackgroundTransparency = 1
 		gridContainer.Parent = screenGui
 
 		local gridLayout = Instance.new("UIGridLayout")
-		gridLayout.CellSize = UDim2.new(0, 170, 0, 200)
+		gridLayout.CellSize = UDim2.new(0, 140, 0, 150)
 		gridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
 		gridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 		gridLayout.VerticalAlignment = Enum.VerticalAlignment.Top
@@ -706,8 +839,8 @@ function WelcomeScreenUI.Show()
 
 		local playButton = Instance.new("TextButton")
 		playButton.Name = "PlayButton"
-		playButton.Size = UDim2.new(0, 300, 0, 60)
-		playButton.Position = UDim2.new(0.5, -150, 0.85, 0)
+		playButton.Size = UDim2.new(0, 300, 0, 55)
+		playButton.Position = UDim2.new(0.5, -150, 0.75, 0)
 		playButton.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
 		playButton.BorderSizePixel = 0
 		playButton.Font = Enum.Font.GothamBold
@@ -722,6 +855,7 @@ function WelcomeScreenUI.Show()
 
 		playButton.MouseButton1Click:Connect(function()
 			remoteEvent:FireServer("SelectSnakeVariant", selectedVariantId)
+			remoteEvent:FireServer("ChangeMap", selectedMapName)
 			screenGui:Destroy()
 			StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
 		end)
@@ -741,21 +875,21 @@ return WelcomeScreenUI
         </Properties>
       </Item>
     </Item>
-    <Item class="Folder" referent="8">
+    <Item class="Folder" referent="9">
       <Properties>
         <string name="Name">RemoteEvents</string>
       </Properties>
-      <Item class="RemoteEvent" referent="9">
+      <Item class="RemoteEvent" referent="10">
         <Properties>
           <string name="Name">GameEvent</string>
         </Properties>
       </Item>
     </Item>
-    <Item class="Folder" referent="10">
+    <Item class="Folder" referent="11">
       <Properties>
         <string name="Name">Shared</string>
       </Properties>
-      <Item class="ModuleScript" referent="11">
+      <Item class="ModuleScript" referent="12">
         <Properties>
           <string name="Name">BodySegmentPool</string>
           <string name="Source"><![CDATA[-- BodySegmentPool.lua
@@ -885,7 +1019,7 @@ return BodySegmentPool
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="12">
+      <Item class="ModuleScript" referent="13">
         <Properties>
           <string name="Name">Maid</string>
           <string name="Source"><![CDATA[-- Maid.lua
@@ -958,7 +1092,7 @@ return Maid
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="13">
+      <Item class="ModuleScript" referent="14">
         <Properties>
           <string name="Name">ObjectPool</string>
           <string name="Source"><![CDATA[-- ObjectPool.lua
@@ -1037,7 +1171,7 @@ return ObjectPool
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="14">
+      <Item class="ModuleScript" referent="15">
         <Properties>
           <string name="Name">Signal</string>
           <string name="Source"><![CDATA[-- Signal.lua
@@ -1121,7 +1255,7 @@ return Signal
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="15">
+      <Item class="ModuleScript" referent="16">
         <Properties>
           <string name="Name">SpatialGrid</string>
           <string name="Source"><![CDATA[-- SpatialGrid.lua
@@ -1256,11 +1390,11 @@ return SpatialGrid
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="16">
+  <Item class="ServerScriptService" referent="17">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Script" referent="17">
+    <Item class="Script" referent="18">
       <Properties>
         <string name="Name">GameInitializer</string>
         <token name="RunContext">0</token>
@@ -1274,8 +1408,9 @@ local Players = game:GetService("Players")
 print("[GameInitializer] Starting Slither Simulator server...")
 
 -- Load services
+-- Load services
 local CharacterManager = require(ServerScriptService.GameSystems.CharacterManager)
-local ArenaBuilder = require(ServerScriptService.GameSystems.ArenaBuilder)
+local ArenaManager = require(ServerScriptService.GameSystems.ArenaManager)
 local PlayerDataManager = require(ServerScriptService.GameSystems.PlayerDataManager)
 local RankService = require(ServerScriptService.GameSystems.RankService)
 local ShieldManager = require(ServerScriptService.GameSystems.ShieldManager)
@@ -1287,11 +1422,11 @@ local ReviveService = require(ServerScriptService.GameSystems.ReviveService)
 -- Initialize services in dependency order
 CharacterManager:Initialize() -- Disable default characters first
 local arenaOk, arenaErr = pcall(function()
-	ArenaBuilder:Initialize() -- Create arena
+	ArenaManager:Initialize() -- Create arena via Manager
 end)
 
 if not arenaOk then
-	warn("[GameInitializer] ArenaBuilder failed to initialize:", arenaErr)
+	warn("[GameInitializer] ArenaManager failed to initialize:", arenaErr)
 end
 
 PlayerDataManager:Initialize()
@@ -1360,6 +1495,11 @@ remoteEvent.OnServerEvent:Connect(function(player, eventType, ...)
 		local topPlayers = LeaderboardService:GetTopPlayers(statName, scope, 10)
 		remoteEvent:FireClient(player, "LeaderboardData", topPlayers)
 
+	elseif eventType == "ChangeMap" then
+		local mapName = ...
+		print("[GameInitializer] Map change requested by", player.Name, ":", mapName)
+		ArenaManager:LoadMap(mapName)
+
 	else
 		warn("[GameInitializer] Unknown event type:", eventType)
 	end
@@ -1377,6 +1517,18 @@ end)
 
 -- Send initial data to players
 Players.PlayerAdded:Connect(function(player)
+	-- Chat commands for testing
+	player.Chatted:Connect(function(message)
+		print("[Chat] Player said:", message)
+		local args = string.split(message, " ")
+		if args[1] == "/map" and args[2] then
+			-- Capitalize first letter for matching
+			local mapName = args[2]:sub(1,1):upper() .. args[2]:sub(2):lower()
+			print("[Chat] Switching map to:", mapName)
+			ArenaManager:LoadMap(mapName)
+		end
+	end)
+
 	task.wait(2) -- Wait for client to load
 
 	local data = PlayerDataManager:GetData(player)
@@ -1395,11 +1547,11 @@ print("[GameInitializer] Server initialized successfully!")
 ]]></string>
       </Properties>
     </Item>
-    <Item class="Folder" referent="18">
+    <Item class="Folder" referent="19">
       <Properties>
         <string name="Name">GameSystems</string>
       </Properties>
-      <Item class="ModuleScript" referent="19">
+      <Item class="ModuleScript" referent="20">
         <Properties>
           <string name="Name">ArenaBuilder</string>
           <string name="Source"><![CDATA[-- ArenaBuilder.lua
@@ -1411,70 +1563,71 @@ local SnakeConfig = require(ReplicatedStorage.Modules.SnakeConfig)
 
 local ArenaBuilder = {}
 
-function ArenaBuilder:Initialize()
+function ArenaBuilder:Initialize(mapConfig)
 	local arenaFolder = workspace:FindFirstChild("Arena")
-	if not arenaFolder then
-		arenaFolder = Instance.new("Folder")
-		arenaFolder.Name = "Arena"
-		arenaFolder.Parent = workspace
+	if arenaFolder then
+		arenaFolder:Destroy() -- Clear existing arena
 	end
+	
+	arenaFolder = Instance.new("Folder")
+	arenaFolder.Name = "Arena"
+	arenaFolder.Parent = workspace
 
 	-- Create floor
-	self:CreateFloor(arenaFolder)
+	self:CreateFloor(arenaFolder, mapConfig)
 
 	-- Create boundary walls
-	self:CreateBoundaries(arenaFolder)
+	self:CreateBoundaries(arenaFolder, mapConfig)
 
 	-- Add lighting
 	self:SetupLighting()
 
-	print("[ArenaBuilder] Arena created successfully")
+	print("[ArenaBuilder] Arena created successfully: " .. mapConfig.Name)
 end
 
-function ArenaBuilder:CreateFloor(parent)
-	local arenaMin = SnakeConfig.ARENA_MIN
-	local arenaMax = SnakeConfig.ARENA_MAX
-
-	local sizeX = arenaMax.X - arenaMin.X
-	local sizeZ = arenaMax.Z - arenaMin.Z
-	local centerX = (arenaMax.X + arenaMin.X) / 2
-	local centerZ = (arenaMax.Z + arenaMin.Z) / 2
-
+function ArenaBuilder:CreateFloor(parent, mapConfig)
+	local size = mapConfig.ArenaSize
+	local sizeX = size.X
+	local sizeZ = size.Z
+	
 	-- Main floor
 	local floor = Instance.new("Part")
 	floor.Name = "Floor"
 	floor.Size = Vector3.new(sizeX, 1, sizeZ)
-	floor.Position = Vector3.new(centerX, -0.5, centerZ)
+	floor.Position = Vector3.new(0, -0.5, 0)
 	floor.Anchored = true
 	floor.Material = Enum.Material.Slate
-	floor.Color = Color3.fromRGB(30, 30, 40)
+	floor.Color = mapConfig.FloorColor or Color3.fromRGB(30, 30, 40)
 	floor.TopSurface = Enum.SurfaceType.Smooth
 	floor.BottomSurface = Enum.SurfaceType.Smooth
 	floor.Parent = parent
 
 	-- Grid lines for visual reference
 	local gridSpacing = 100
-	for x = arenaMin.X, arenaMax.X, gridSpacing do
+	local minX, maxX = -sizeX/2, sizeX/2
+	local minZ, maxZ = -sizeZ/2, sizeZ/2
+	
+	for x = minX, maxX, gridSpacing do
 		local line = Instance.new("Part")
 		line.Name = "GridLine"
 		line.Size = Vector3.new(2, 0.1, sizeZ)
-		line.Position = Vector3.new(x, 0.1, centerZ)
+		line.Position = Vector3.new(x, 0.1, 0)
 		line.Anchored = true
 		line.Material = Enum.Material.Neon
-		line.Color = Color3.fromRGB(50, 50, 70)
+		line.Color = mapConfig.GridColor or Color3.fromRGB(50, 50, 70)
 		line.CanCollide = false
 		line.Transparency = 0.7
 		line.Parent = parent
 	end
 
-	for z = arenaMin.Z, arenaMax.Z, gridSpacing do
+	for z = minZ, maxZ, gridSpacing do
 		local line = Instance.new("Part")
 		line.Name = "GridLine"
 		line.Size = Vector3.new(sizeX, 0.1, 2)
-		line.Position = Vector3.new(centerX, 0.1, z)
+		line.Position = Vector3.new(0, 0.1, z)
 		line.Anchored = true
 		line.Material = Enum.Material.Neon
-		line.Color = Color3.fromRGB(50, 50, 70)
+		line.Color = mapConfig.GridColor or Color3.fromRGB(50, 50, 70)
 		line.CanCollide = false
 		line.Transparency = 0.7
 		line.Parent = parent
@@ -1483,26 +1636,22 @@ function ArenaBuilder:CreateFloor(parent)
 	print("[ArenaBuilder] Floor created")
 end
 
-function ArenaBuilder:CreateBoundaries(parent)
-	local arenaMin = SnakeConfig.ARENA_MIN
-	local arenaMax = SnakeConfig.ARENA_MAX
-
+function ArenaBuilder:CreateBoundaries(parent, mapConfig)
+	local size = mapConfig.ArenaSize
+	local sizeX = size.X
+	local sizeZ = size.Z
+	
 	local wallHeight = 20
 	local wallThickness = 2
-
-	local sizeX = arenaMax.X - arenaMin.X
-	local sizeZ = arenaMax.Z - arenaMin.Z
-	local centerX = (arenaMax.X + arenaMin.X) / 2
-	local centerZ = (arenaMax.Z + arenaMin.Z) / 2
 
 	-- North wall
 	local northWall = Instance.new("Part")
 	northWall.Name = "NorthWall"
 	northWall.Size = Vector3.new(sizeX + wallThickness * 2, wallHeight, wallThickness)
-	northWall.Position = Vector3.new(centerX, wallHeight / 2, arenaMax.Z + wallThickness / 2)
+	northWall.Position = Vector3.new(0, wallHeight / 2, sizeZ / 2 + wallThickness / 2)
 	northWall.Anchored = true
 	northWall.Material = Enum.Material.ForceField
-	northWall.Color = Color3.fromRGB(100, 100, 255)
+	northWall.Color = mapConfig.WallColor or Color3.fromRGB(100, 100, 255)
 	northWall.Transparency = 0.3
 	northWall.CanCollide = true
 	northWall.Parent = parent
@@ -1511,10 +1660,10 @@ function ArenaBuilder:CreateBoundaries(parent)
 	local southWall = Instance.new("Part")
 	southWall.Name = "SouthWall"
 	southWall.Size = Vector3.new(sizeX + wallThickness * 2, wallHeight, wallThickness)
-	southWall.Position = Vector3.new(centerX, wallHeight / 2, arenaMin.Z - wallThickness / 2)
+	southWall.Position = Vector3.new(0, wallHeight / 2, -sizeZ / 2 - wallThickness / 2)
 	southWall.Anchored = true
 	southWall.Material = Enum.Material.ForceField
-	southWall.Color = Color3.fromRGB(100, 100, 255)
+	southWall.Color = mapConfig.WallColor or Color3.fromRGB(100, 100, 255)
 	southWall.Transparency = 0.3
 	southWall.CanCollide = true
 	southWall.Parent = parent
@@ -1523,10 +1672,10 @@ function ArenaBuilder:CreateBoundaries(parent)
 	local eastWall = Instance.new("Part")
 	eastWall.Name = "EastWall"
 	eastWall.Size = Vector3.new(wallThickness, wallHeight, sizeZ)
-	eastWall.Position = Vector3.new(arenaMax.X + wallThickness / 2, wallHeight / 2, centerZ)
+	eastWall.Position = Vector3.new(sizeX / 2 + wallThickness / 2, wallHeight / 2, 0)
 	eastWall.Anchored = true
 	eastWall.Material = Enum.Material.ForceField
-	eastWall.Color = Color3.fromRGB(100, 100, 255)
+	eastWall.Color = mapConfig.WallColor or Color3.fromRGB(100, 100, 255)
 	eastWall.Transparency = 0.3
 	eastWall.CanCollide = true
 	eastWall.Parent = parent
@@ -1535,15 +1684,57 @@ function ArenaBuilder:CreateBoundaries(parent)
 	local westWall = Instance.new("Part")
 	westWall.Name = "WestWall"
 	westWall.Size = Vector3.new(wallThickness, wallHeight, sizeZ)
-	westWall.Position = Vector3.new(arenaMin.X - wallThickness / 2, wallHeight / 2, centerZ)
+	westWall.Position = Vector3.new(-sizeX / 2 - wallThickness / 2, wallHeight / 2, 0)
 	westWall.Anchored = true
 	westWall.Material = Enum.Material.ForceField
-	westWall.Color = Color3.fromRGB(100, 100, 255)
+	westWall.Color = mapConfig.WallColor or Color3.fromRGB(100, 100, 255)
 	westWall.Transparency = 0.3
 	westWall.CanCollide = true
 	westWall.Parent = parent
 
 	print("[ArenaBuilder] Boundary walls created")
+	
+	-- Generate internal obstacles for Maze
+	if mapConfig.Name == "The Maze" then
+		self:GenerateMazeObstacles(parent, sizeX, sizeZ, wallHeight, wallThickness, mapConfig.WallColor)
+	end
+end
+
+function ArenaBuilder:GenerateMazeObstacles(parent, sizeX, sizeZ, height, thickness, color)
+	local seed = Random.new()
+	local numWalls = 20
+	
+	for i = 1, numWalls do
+		local isVertical = seed:NextInteger(0, 1) == 1
+		local length = seed:NextNumber(50, 150)
+		
+		local wall = Instance.new("Part")
+		wall.Name = "MazeWall"
+		wall.Anchored = true
+		wall.Material = Enum.Material.Neon
+		wall.Color = color or Color3.fromRGB(50, 255, 50)
+		wall.Transparency = 0.2
+		wall.Parent = parent
+		
+		-- Random position within bounds (keeping away from center spawn)
+		local x = seed:NextNumber(-sizeX/2 + 50, sizeX/2 - 50)
+		local z = seed:NextNumber(-sizeZ/2 + 50, sizeZ/2 - 50)
+		
+		-- Keep clear of center
+		if math.abs(x) < 50 and math.abs(z) < 50 then
+			x = x + 100
+		end
+		
+		if isVertical then
+			wall.Size = Vector3.new(thickness, height, length)
+			wall.Position = Vector3.new(x, height/2, z)
+		else
+			wall.Size = Vector3.new(length, height, thickness)
+			wall.Position = Vector3.new(x, height/2, z)
+		end
+	end
+	
+	print("[ArenaBuilder] Maze obstacles generated")
 end
 
 function ArenaBuilder:SetupLighting()
@@ -1578,7 +1769,57 @@ return ArenaBuilder
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="20">
+      <Item class="ModuleScript" referent="21">
+        <Properties>
+          <string name="Name">ArenaManager</string>
+          <string name="Source"><![CDATA[-- ArenaManager.lua
+-- Manages map loading and arena state
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
+
+local MapConfig = require(ReplicatedStorage.Modules.MapConfig)
+local ArenaBuilder = require(ServerScriptService.GameSystems.ArenaBuilder)
+
+local ArenaManager = {}
+ArenaManager.CurrentMap = "Classic"
+
+function ArenaManager:Initialize()
+	print("[ArenaManager] Initializing...")
+	
+	-- Load default map
+	self:LoadMap(self.CurrentMap)
+	
+	print("[ArenaManager] Initialized")
+end
+
+function ArenaManager:LoadMap(mapName)
+	local config = MapConfig.Maps[mapName]
+	if not config then
+		warn("[ArenaManager] Map not found: " .. tostring(mapName))
+		return
+	end
+	
+	self.CurrentMap = mapName
+	MapConfig.CurrentMap = mapName -- Update shared state (if needed)
+	
+	print("[ArenaManager] Loading map: " .. config.Name)
+	
+	-- Build the arena
+	ArenaBuilder:Initialize(config)
+	
+	-- TODO: Handle player respawning or teleporting if needed
+end
+
+function ArenaManager:GetCurrentMapConfig()
+	return MapConfig.Maps[self.CurrentMap]
+end
+
+return ArenaManager
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="22">
         <Properties>
           <string name="Name">CharacterManager</string>
           <string name="Source"><![CDATA[-- CharacterManager.lua
@@ -1620,7 +1861,7 @@ return CharacterManager
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="21">
+      <Item class="ModuleScript" referent="23">
         <Properties>
           <string name="Name">FoodSpawner</string>
           <string name="Source"><![CDATA[-- FoodSpawner.lua
@@ -1695,8 +1936,14 @@ function FoodSpawner:SpawnFood(count)
 
 		-- Check minimum distance (Poisson disk)
 		if self:_isValidSpawnPosition(position) then
-			local foodType, foodData = FoodConfig.GetRandomFoodType()
-			self:_createFood(position, foodType, foodData)
+			-- 5% chance for power-up
+			if math.random() < 0.05 then
+				local powerUpType, powerUpData = self:_getRandomPowerUp()
+				self:_createFood(position, "POWERUP_" .. powerUpType, powerUpData)
+			else
+				local foodType, foodData = FoodConfig.GetRandomFoodType()
+				self:_createFood(position, foodType, foodData)
+			end
 			spawned = spawned + 1
 		end
 	end
@@ -1704,6 +1951,26 @@ function FoodSpawner:SpawnFood(count)
 	if spawned > 0 then
 		print(string.format("[FoodSpawner] Spawned %d food", spawned))
 	end
+end
+
+-- Gets random power-up type
+function FoodSpawner:_getRandomPowerUp()
+	local totalWeight = 0
+	for _, data in pairs(FoodConfig.POWERUPS) do
+		totalWeight = totalWeight + data.weight
+	end
+
+	local random = math.random() * totalWeight
+	local currentWeight = 0
+
+	for typeName, data in pairs(FoodConfig.POWERUPS) do
+		currentWeight = currentWeight + data.weight
+		if random <= currentWeight then
+			return typeName, data
+		end
+	end
+	
+	return "SPEED", FoodConfig.POWERUPS.SPEED
 end
 
 -- Checks if spawn position is valid (Poisson disk)
@@ -1819,7 +2086,7 @@ return FoodSpawner
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="22">
+      <Item class="ModuleScript" referent="24">
         <Properties>
           <string name="Name">LeaderboardService</string>
           <string name="Source"><![CDATA[-- LeaderboardService.lua
@@ -2020,7 +2287,7 @@ return LeaderboardService
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="23">
+      <Item class="ModuleScript" referent="25">
         <Properties>
           <string name="Name">PlayerDataManager</string>
           <string name="Source"><![CDATA[-- PlayerDataManager.lua
@@ -2309,7 +2576,7 @@ return PlayerDataManager
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="24">
+      <Item class="ModuleScript" referent="26">
         <Properties>
           <string name="Name">RankService</string>
           <string name="Source"><![CDATA[-- RankService.lua
@@ -2384,7 +2651,7 @@ return RankService
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="25">
+      <Item class="ModuleScript" referent="27">
         <Properties>
           <string name="Name">ReviveService</string>
           <string name="Source"><![CDATA[-- ReviveService.lua
@@ -2401,7 +2668,23 @@ local PROMPT_TIMEOUT = 10 -- Seconds to accept/decline
 function ReviveService:OfferRevival(player, PlayerDataManager, SnakeManager, ShieldManager, RankService)
 	-- Check if player has donuts
 	local donuts = PlayerDataManager:GetDonuts(player)
+	
 	if donuts <= 0 then
+		-- No donuts - auto respawn after delay
+		local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
+		if remoteEvent then
+			remoteEvent:FireClient(player, "ShowRevivePrompt", 0)
+		end
+		
+		task.wait(3)
+		
+		-- Auto-respawn
+		SnakeManager:CreateSnake(player)
+		local rank = PlayerDataManager:GetRank(player)
+		local shieldDuration = RankService:GetShieldDuration(rank)
+		ShieldManager:ActivateShield(player, shieldDuration)
+		
+		print(string.format("[ReviveService] %s auto-respawned (no donuts)", player.Name))
 		return false
 	end
 
@@ -2474,6 +2757,7 @@ end
 -- Declines revival
 function ReviveService:DeclineRevival(player)
 	if self._activePrompts[player] then
+		local prompt = self._activePrompts[player]
 		self._activePrompts[player] = nil
 
 		-- Notify client
@@ -2482,7 +2766,14 @@ function ReviveService:DeclineRevival(player)
 			remoteEvent:FireClient(player, "HideRevivePrompt")
 		end
 
-		print(string.format("[ReviveService] %s declined revival", player.Name))
+		-- Auto-respawn after declining
+		task.wait(1)
+		prompt.SnakeManager:CreateSnake(player)
+		local rank = prompt.PlayerDataManager:GetRank(player)
+		local shieldDuration = prompt.RankService:GetShieldDuration(rank)
+		prompt.ShieldManager:ActivateShield(player, shieldDuration)
+
+		print(string.format("[ReviveService] %s declined revival - auto-respawned", player.Name))
 	end
 end
 
@@ -2490,7 +2781,7 @@ return ReviveService
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="26">
+      <Item class="ModuleScript" referent="28">
         <Properties>
           <string name="Name">ShieldManager</string>
           <string name="Source"><![CDATA[-- ShieldManager.lua
@@ -2588,7 +2879,7 @@ return ShieldManager
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="27">
+      <Item class="ModuleScript" referent="29">
         <Properties>
           <string name="Name">SnakeManager</string>
           <string name="Source"><![CDATA[-- SnakeManager.lua
@@ -2707,6 +2998,49 @@ function SnakeManager:CreateSnake(player, spawnShieldDuration)
 	head.TopSurface = Enum.SurfaceType.Smooth
 	head.BottomSurface = Enum.SurfaceType.Smooth
 	head.Parent = self._snakeParent
+	
+	-- Create Name Tag
+	local nameTag = Instance.new("BillboardGui")
+	nameTag.Name = "NameTag"
+	nameTag.Size = UDim2.new(0, 200, 0, 50)
+	nameTag.StudsOffset = Vector3.new(0, 3, 0)
+	nameTag.AlwaysOnTop = true
+	nameTag.Parent = head
+	
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Name = "NameLabel"
+	nameLabel.Size = UDim2.new(1, 0, 1, 0)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Text = player.Name
+	nameLabel.TextColor3 = Color3.new(1, 1, 1)
+	nameLabel.TextStrokeTransparency = 0
+	nameLabel.TextScaled = true
+	nameLabel.Font = Enum.Font.GothamBold
+	nameLabel.Parent = nameTag
+
+	-- Add Trail
+	local att0 = Instance.new("Attachment")
+	att0.Name = "TrailAtt0"
+	att0.Position = Vector3.new(0, 0.5, 0)
+	att0.Parent = head
+	
+	local att1 = Instance.new("Attachment")
+	att1.Name = "TrailAtt1"
+	att1.Position = Vector3.new(0, -0.5, 0)
+	att1.Parent = head
+	
+	local trail = Instance.new("Trail")
+	trail.Name = "SnakeTrail"
+	trail.Attachment0 = att0
+	trail.Attachment1 = att1
+	trail.Color = ColorSequence.new(variant.color)
+	trail.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	trail.Lifetime = 0.5
+	trail.MinLength = 0.1
+	trail.Parent = head
 
 	-- Create body segments with variant properties
 	local bodySegments = {}
@@ -2747,6 +3081,10 @@ function SnakeManager:CreateSnake(player, spawnShieldDuration)
 		mouth = customization.mouth,
 		eyes = customization.eyes,
 		currentGold = 0, -- Session gold (resets on death)
+		
+		-- Power-ups
+		activePowerUps = {}, -- [type] = endTime
+		magnetMultiplier = 1,
 	}
 
 	self._snakes[player] = snake
@@ -2824,6 +3162,31 @@ function SnakeManager:ActivateBrake(player)
 	snake.brakeCooldownRemaining = cooldown
 
 	print(string.format("[SnakeManager] %s activated brake", player.Name))
+end
+
+-- Activates power-up
+function SnakeManager:ActivatePowerUp(player, powerUpType, data)
+	local snake = self._snakes[player]
+	if not snake then return end
+	
+	local duration = data.duration or 10
+	snake.activePowerUps[powerUpType] = os.clock() + duration
+	
+	if powerUpType == "SPEED" then
+		snake.speed = SnakeConfig.BASE_SPEED * 1.5
+	elseif powerUpType == "MAGNET" then
+		snake.magnetMultiplier = data.rangeMultiplier or 2
+	elseif powerUpType == "SHIELD" then
+		self.ShieldManager:ActivateShield(player, duration)
+	end
+	
+	-- Notify client
+	local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
+	if remoteEvent then
+		remoteEvent:FireClient(player, "PowerUpActivated", powerUpType, duration)
+	end
+	
+	print(string.format("[SnakeManager] %s collected %s", player.Name, powerUpType))
 end
 
 -- Grows snake
@@ -2910,6 +3273,22 @@ function SnakeManager:_updateSnakes(dt)
 		if snake.brakeActive and snake.brakeCooldownRemaining == 0 then
 			snake.brakeActive = false
 			snake.speed = SnakeConfig.BASE_SPEED
+		end
+		
+		-- Check power-ups
+		local now = os.clock()
+		for type, endTime in pairs(snake.activePowerUps) do
+			if now >= endTime then
+				snake.activePowerUps[type] = nil
+				
+				if type == "SPEED" then
+					if not snake.boostActive and not snake.brakeActive then
+						snake.speed = SnakeConfig.BASE_SPEED
+					end
+				elseif type == "MAGNET" then
+					snake.magnetMultiplier = 1
+				end
+			end
 		end
 
 		-- Move head
@@ -3015,7 +3394,7 @@ end
 -- Checks food collection with magnet
 function SnakeManager:_checkFoodCollection(player, snake)
 	local rank = self.PlayerDataManager:GetRank(player)
-	local magnetRange = self.RankService:GetMagnetRange(rank)
+	local magnetRange = self.RankService:GetMagnetRange(rank) * (snake.magnetMultiplier or 1)
 
 	local nearbyFood = self.FoodSpawner:GetFoodInRange(snake.head.Position, magnetRange)
 
@@ -3023,6 +3402,13 @@ function SnakeManager:_checkFoodCollection(player, snake)
 		local success, foodData = self.FoodSpawner:CollectFood(player, food)
 
 		if success and foodData then
+			-- Check if power-up
+			if string.sub(foodData.type, 1, 8) == "POWERUP_" then
+				local powerUpType = string.sub(foodData.type, 9)
+				self:ActivatePowerUp(player, powerUpType, foodData.data)
+				continue
+			end
+			
 			-- Award gold
 			local FoodConfig = require(ReplicatedStorage.Modules.FoodConfig)
 			local goldReward = FoodConfig.CalculateReward(foodData.data, rank)
@@ -3104,7 +3490,7 @@ return SnakeManager
         </Properties>
       </Item>
     </Item>
-    <Item class="ModuleScript" referent="28">
+    <Item class="ModuleScript" referent="30">
       <Properties>
         <string name="Name">Tests</string>
         <string name="Source"><![CDATA[-- init.lua
@@ -3131,7 +3517,7 @@ end
 return results
 ]]></string>
       </Properties>
-      <Item class="ModuleScript" referent="29">
+      <Item class="ModuleScript" referent="31">
         <Properties>
           <string name="Name">FoodSpawner.spec</string>
           <string name="Source"><![CDATA[-- FoodSpawner.spec.lua
@@ -3236,7 +3622,7 @@ end
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="30">
+      <Item class="ModuleScript" referent="32">
         <Properties>
           <string name="Name">PlayerDataManager.spec</string>
           <string name="Source"><![CDATA[-- PlayerDataManager.spec.lua
@@ -3354,7 +3740,7 @@ end
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="31">
+      <Item class="ModuleScript" referent="33">
         <Properties>
           <string name="Name">RankService.spec</string>
           <string name="Source"><![CDATA[-- RankService.spec.lua
@@ -3467,7 +3853,7 @@ end
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="32">
+      <Item class="ModuleScript" referent="34">
         <Properties>
           <string name="Name">SnakeManager.spec</string>
           <string name="Source"><![CDATA[-- SnakeManager.spec.lua
@@ -3539,7 +3925,7 @@ end
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="33">
+      <Item class="ModuleScript" referent="35">
         <Properties>
           <string name="Name">SpatialGrid.spec</string>
           <string name="Source"><![CDATA[-- SpatialGrid.spec.lua
@@ -3636,20 +4022,30 @@ end
       </Item>
     </Item>
   </Item>
-  <Item class="StarterGui" referent="34">
+  <Item class="ServerStorage" referent="36">
+    <Properties>
+      <string name="Name">ServerStorage</string>
+    </Properties>
+    <Item class="Folder" referent="37">
+      <Properties>
+        <string name="Name">Maps</string>
+      </Properties>
+    </Item>
+  </Item>
+  <Item class="StarterGui" referent="38">
     <Properties>
       <string name="Name">StarterGui</string>
     </Properties>
-    <Item class="ScreenGui" referent="35">
+    <Item class="ScreenGui" referent="39">
       <Properties>
         <string name="Name">ScreenGui</string>
         <bool name="ResetOnSpawn">false</bool>
       </Properties>
-      <Item class="Folder" referent="36">
+      <Item class="Folder" referent="40">
         <Properties>
           <string name="Name">CustomizationMenu</string>
         </Properties>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="41">
           <Properties>
             <string name="Name">CustomizationController</string>
             <string name="Source"><![CDATA[--[[
@@ -3777,7 +4173,7 @@ return CustomizationController
 ]]></string>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="38">
+        <Item class="LocalScript" referent="42">
           <Properties>
             <string name="Name">CustomizationMenu</string>
             <string name="Source"><![CDATA[-- CustomizationMenu.client.lua
@@ -3994,7 +4390,7 @@ print("[CustomizationMenu] Initialized (Press C to open)")
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="39">
+        <Item class="ModuleScript" referent="43">
           <Properties>
             <string name="Name">CustomizationMenu</string>
             <string name="Source"><![CDATA[-- CustomizationMenu.lua
@@ -4153,11 +4549,11 @@ return {}
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="40">
+      <Item class="Folder" referent="44">
         <Properties>
           <string name="Name">HUD</string>
         </Properties>
-        <Item class="LocalScript" referent="41">
+        <Item class="LocalScript" referent="45">
           <Properties>
             <string name="Name">HUD</string>
             <string name="Source"><![CDATA[-- HUD.client.lua
@@ -4274,6 +4670,48 @@ donutsLabel.Font = Enum.Font.Gotham
 donutsLabel.TextXAlignment = Enum.TextXAlignment.Left
 donutsLabel.Parent = hudFrame
 
+-- Live Leaderboard
+local leaderboardFrame = Instance.new("Frame")
+leaderboardFrame.Name = "LiveLeaderboard"
+leaderboardFrame.Size = UDim2.new(0, 200, 0, 250)
+leaderboardFrame.Position = UDim2.new(1, -220, 0, 20)
+leaderboardFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+leaderboardFrame.BackgroundTransparency = 0.3
+leaderboardFrame.BorderSizePixel = 0
+leaderboardFrame.Parent = screenGui
+
+local lbCorner = Instance.new("UICorner")
+lbCorner.CornerRadius = UDim.new(0, 10)
+lbCorner.Parent = leaderboardFrame
+
+local lbTitle = Instance.new("TextLabel")
+lbTitle.Name = "Title"
+lbTitle.Size = UDim2.new(1, 0, 0, 30)
+lbTitle.BackgroundTransparency = 1
+lbTitle.Text = "TOP SNAKES"
+lbTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+lbTitle.TextSize = 18
+lbTitle.Font = Enum.Font.GothamBold
+lbTitle.Parent = leaderboardFrame
+
+local lbList = Instance.new("UIListLayout")
+lbList.SortOrder = Enum.SortOrder.LayoutOrder
+lbList.Padding = UDim.new(0, 2)
+lbList.Parent = leaderboardFrame
+
+-- Container for entries (offset by title)
+local lbContainer = Instance.new("Frame")
+lbContainer.Name = "Container"
+lbContainer.Size = UDim2.new(1, -10, 1, -35)
+lbContainer.Position = UDim2.new(0, 5, 0, 35)
+lbContainer.BackgroundTransparency = 1
+lbContainer.Parent = leaderboardFrame
+
+local lbContainerLayout = Instance.new("UIListLayout")
+lbContainerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+lbContainerLayout.Padding = UDim.new(0, 2)
+lbContainerLayout.Parent = lbContainer
+
 -- State
 local currentGold = 0
 local currentRank = 1
@@ -4300,6 +4738,18 @@ local function updateLength(length)
 	lengthLabel.Text = "Length: " .. length
 end
 
+local function updateProgressBar()
+	local nextThreshold = RankConfig.GetNextRankThreshold(currentRank)
+	if nextThreshold then
+		local currentThreshold = RankConfig.GetRankThreshold(currentRank)
+		local progress = (currentGold - currentThreshold) / (nextThreshold - currentThreshold)
+		progressBar.Size = UDim2.new(math.clamp(progress, 0, 1), 0, 1, 0)
+	else
+		-- Max rank
+		progressBar.Size = UDim2.new(1, 0, 1, 0)
+	end
+end
+
 local function updateKills(kills)
 	currentKills = kills
 	killsLabel.Text = "Kills: " .. kills
@@ -4310,15 +4760,52 @@ local function updateDonuts(donuts)
 	donutsLabel.Text = "Donuts: " .. donuts
 end
 
-local function updateProgressBar()
-	local nextThreshold = RankConfig.GetNextRankThreshold(currentRank)
-	if nextThreshold then
-		local currentThreshold = RankConfig.GetRankThreshold(currentRank)
-		local progress = (currentGold - currentThreshold) / (nextThreshold - currentThreshold)
-		progressBar.Size = UDim2.new(math.clamp(progress, 0, 1), 0, 1, 0)
-	else
-		-- Max rank
-		progressBar.Size = UDim2.new(1, 0, 1, 0)
+local function updateLiveLeaderboard(snakeData)
+	-- Clear existing
+	for _, child in ipairs(lbContainer:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+	
+	-- Convert to list for sorting
+	local snakes = {}
+	for userId, data in pairs(snakeData) do
+		local name = "Unknown"
+		local p = Players:GetPlayerByUserId(tonumber(userId))
+		if p then name = p.Name end
+		
+		table.insert(snakes, {
+			name = name,
+			length = data.length,
+			isLocal = (tonumber(userId) == player.UserId)
+		})
+	end
+	
+	-- Sort by length desc
+	table.sort(snakes, function(a, b)
+		return a.length > b.length
+	end)
+	
+	-- Display top 10
+	for i = 1, math.min(10, #snakes) do
+		local snake = snakes[i]
+		
+		local entry = Instance.new("Frame")
+		entry.Name = "Entry"
+		entry.Size = UDim2.new(1, 0, 0, 20)
+		entry.BackgroundTransparency = 1
+		entry.Parent = lbContainer
+		
+		local text = Instance.new("TextLabel")
+		text.Size = UDim2.new(1, 0, 1, 0)
+		text.BackgroundTransparency = 1
+		text.Text = string.format("%d. %s (%d)", i, snake.name, snake.length)
+		text.TextColor3 = snake.isLocal and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 255, 255)
+		text.TextSize = 14
+		text.Font = snake.isLocal and Enum.Font.GothamBold or Enum.Font.Gotham
+		text.TextXAlignment = Enum.TextXAlignment.Left
+		text.Parent = entry
 	end
 end
 
@@ -4352,10 +4839,13 @@ remoteEvent.OnClientEvent:Connect(function(eventType, data)
 
 	elseif eventType == "UpdateSnakes" then
 		-- Update local player's length
-		local localData = data[player.UserId]
+		local localData = data[tostring(player.UserId)] or data[player.UserId]
 		if localData then
 			updateLength(localData.length)
 		end
+		
+		-- Update leaderboard
+		updateLiveLeaderboard(data)
 	end
 end)
 
@@ -4363,7 +4853,7 @@ print("[HUD] Initialized")
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="42">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">HUD</string>
             <string name="Source"><![CDATA[-- HUD.lua
@@ -4473,7 +4963,7 @@ return {}
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="43">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">HUDController</string>
             <string name="Source"><![CDATA[--[[
@@ -4588,11 +5078,11 @@ return HUDController
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="44">
+      <Item class="Folder" referent="48">
         <Properties>
           <string name="Name">Leaderboard</string>
         </Properties>
-        <Item class="LocalScript" referent="45">
+        <Item class="LocalScript" referent="49">
           <Properties>
             <string name="Name">Leaderboard</string>
             <string name="Source"><![CDATA[-- Leaderboard.client.lua
@@ -4810,7 +5300,7 @@ print("[Leaderboard] Initialized")
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="46">
+        <Item class="ModuleScript" referent="50">
           <Properties>
             <string name="Name">Leaderboard</string>
             <string name="Source"><![CDATA[-- Leaderboard.lua
@@ -4978,7 +5468,7 @@ return {}
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="47">
+        <Item class="ModuleScript" referent="51">
           <Properties>
             <string name="Name">LeaderboardUI</string>
             <string name="Source"><![CDATA[--[[
@@ -5095,11 +5585,11 @@ return LeaderboardUI
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="48">
+      <Item class="Folder" referent="52">
         <Properties>
           <string name="Name">RevivePrompt</string>
         </Properties>
-        <Item class="LocalScript" referent="49">
+        <Item class="LocalScript" referent="53">
           <Properties>
             <string name="Name">RevivePrompt</string>
             <string name="Source"><![CDATA[-- RevivePrompt.client.lua
@@ -5272,7 +5762,7 @@ print("[RevivePrompt] Initialized")
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="50">
+        <Item class="ModuleScript" referent="54">
           <Properties>
             <string name="Name">RevivePrompt</string>
             <string name="Source"><![CDATA[-- RevivePrompt.lua
@@ -5399,7 +5889,7 @@ return {}
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="51">
+        <Item class="ModuleScript" referent="55">
           <Properties>
             <string name="Name">RevivePromptController</string>
             <string name="Source"><![CDATA[--[[
@@ -5512,11 +6002,11 @@ return RevivePromptController
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="52">
+      <Item class="Folder" referent="56">
         <Properties>
           <string name="Name">ShieldTimer</string>
         </Properties>
-        <Item class="LocalScript" referent="53">
+        <Item class="LocalScript" referent="57">
           <Properties>
             <string name="Name">ShieldTimer</string>
             <string name="Source"><![CDATA[-- ShieldTimer.client.lua
@@ -5617,7 +6107,7 @@ print("[ShieldTimer] Initialized")
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="54">
+        <Item class="ModuleScript" referent="58">
           <Properties>
             <string name="Name">ShieldTimer</string>
             <string name="Source"><![CDATA[-- ShieldTimer.lua
@@ -5706,7 +6196,7 @@ return {}
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="55">
+        <Item class="ModuleScript" referent="59">
           <Properties>
             <string name="Name">ShieldTimerController</string>
             <string name="Source"><![CDATA[--[[
@@ -5796,11 +6286,11 @@ return ShieldTimerController
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="56">
+      <Item class="Folder" referent="60">
         <Properties>
           <string name="Name">WelcomeScreen</string>
         </Properties>
-        <Item class="LocalScript" referent="57">
+        <Item class="LocalScript" referent="61">
           <Properties>
             <string name="Name">WelcomeScreen</string>
             <string name="Source"><![CDATA[local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -5813,15 +6303,15 @@ WelcomeScreenUI.Show()
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="58">
+  <Item class="StarterPlayer" referent="62">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="59">
+    <Item class="StarterPlayerScripts" referent="63">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="ModuleScript" referent="60">
+      <Item class="ModuleScript" referent="64">
         <Properties>
           <string name="Name">CameraController</string>
           <string name="Source"><![CDATA[-- CameraController.lua
@@ -5835,8 +6325,9 @@ local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
 local CameraController = {}
-CameraController.ZoomLevel = 50 -- Starting zoom distance
-CameraController.MinZoom = 20
+CameraController.ZoomLevel = 50 -- Current interpolated zoom
+CameraController.TargetZoomLevel = 50 -- Desired zoom target
+CameraController.MinZoom = 5
 CameraController.MaxZoom = 150
 CameraController.TargetPosition = Vector3.new(0, 0, 0)
 CameraController._initialized = false
@@ -5857,7 +6348,24 @@ function CameraController:Initialize()
 		end
 
 		if input.UserInputType == Enum.UserInputType.MouseWheel then
-			self.ZoomLevel = math.clamp(self.ZoomLevel - input.Position.Z * 5, self.MinZoom, self.MaxZoom)
+			-- "Glide" feel: Adjust target, let update loop interpolate
+			-- Sensitivity: 10 studs per click
+			self.TargetZoomLevel = math.clamp(self.TargetZoomLevel - input.Position.Z * 10, self.MinZoom, self.MaxZoom)
+		end
+	end)
+
+	-- Toggle Zoom Key (Z)
+	UserInputService.InputBegan:Connect(function(input, gameProcessed)
+		-- We ignore gameProcessed here to ensure it works even if some UI is consuming input (unless typing)
+		if gameProcessed then 
+			-- Check if it's a textbox, otherwise allow Z
+			local focused = UserInputService:GetFocusedTextBox()
+			if focused then return end
+		end
+		
+		if input.KeyCode == Enum.KeyCode.Z then
+			print("[CameraController] Z key pressed. Toggling zoom.")
+			self:ToggleZoom()
 		end
 	end)
 
@@ -5874,23 +6382,77 @@ function CameraController:Initialize()
 	print("[CameraController] Initialized")
 end
 
+-- Toggles between Min and Max zoom
+function CameraController:ToggleZoom()
+	-- If we are closer to min (POV), go to max. Otherwise go to min.
+	local midPoint = (self.MinZoom + self.MaxZoom) / 2
+	if self.TargetZoomLevel < midPoint then
+		self.TargetZoomLevel = self.MaxZoom
+	else
+		self.TargetZoomLevel = self.MinZoom
+	end
+end
+
 -- Updates camera position
 function CameraController:_updateCamera(dt)
+	-- Smoothly interpolate ZoomLevel towards TargetZoomLevel
+	-- "Glide" effect: 5 * dt gives a nice slide.
+	self.ZoomLevel = self.ZoomLevel + (self.TargetZoomLevel - self.ZoomLevel) * math.min(dt * 5, 1)
+
 	-- Get local player's snake head from Snakes folder
 	local snakesFolder = workspace:FindFirstChild("Snakes")
-	if snakesFolder then
-		local snakeHead = snakesFolder:FindFirstChild(player.Name .. "_Head")
-		if snakeHead then
-			self.TargetPosition = snakeHead.Position
-		end
+	if not snakesFolder then return end
+	
+	local snakeHead = snakesFolder:FindFirstChild(player.Name .. "_Head")
+	if not snakeHead then return end
+	
+	self.TargetPosition = snakeHead.Position
+	
+	-- Get direction from SnakeController
+	local SnakeController = require(script.Parent.SnakeController)
+	local direction = SnakeController.CurrentDirection or Vector3.new(1, 0, 0)
+	
+	-- Calculate interpolation factor t (0 = MinZoom/POV, 1 = MaxZoom/TopDown)
+	local t = math.clamp((self.ZoomLevel - self.MinZoom) / (self.MaxZoom - self.MinZoom), 0, 1)
+	
+	-- Calculate Pitch (Angle down)
+	-- t=0 (POV): -10 degrees (looking forward/slightly down)
+	-- t=1 (Top): -90 degrees (looking straight down)
+	local pitch = -10 + (-80 * t)
+	
+	-- Calculate LookAhead (Where we look relative to head)
+	-- t=0 (POV): Look 30 studs ahead
+	-- t=1 (Top): Look at head
+	local lookAhead = direction * (40 * (1 - t))
+	local lookTarget = self.TargetPosition + lookAhead
+	
+	-- Calculate Camera Position
+	-- We rotate a backward vector by the pitch and yaw
+	local yawRotation = CFrame.lookAt(Vector3.zero, direction)
+	local pitchRotation = CFrame.Angles(math.rad(pitch), 0, 0)
+	
+	-- Offset: When zoomed in (t=0), we want to be slightly above/behind head
+	-- Head radius is ~3. We want to be maybe 4 studs up, 4 studs back?
+	-- self.ZoomLevel handles the "back" distance mostly.
+	
+	local offsetVector = Vector3.new(0, 0, self.ZoomLevel)
+	
+	-- Combine rotations: Yaw -> Pitch -> Offset
+	local finalOffset = yawRotation * pitchRotation * offsetVector
+	
+	-- Add a small vertical offset for POV so we aren't inside the floor
+	if self.ZoomLevel < 10 then
+		finalOffset = finalOffset + Vector3.new(0, 3, 0)
 	end
-
-	-- Set camera position (top-down view)
-	local cameraPos = self.TargetPosition + Vector3.new(0, self.ZoomLevel, 0)
-	camera.CFrame = CFrame.new(cameraPos, self.TargetPosition)
-
+	
+	local cameraPos = self.TargetPosition + finalOffset
+	
+	-- Smoothly interpolate camera CFrame
+	local targetCFrame = CFrame.new(cameraPos, lookTarget)
+	camera.CFrame = camera.CFrame:Lerp(targetCFrame, 0.2) -- Smooth damping
+	
 	-- Adjust FOV based on zoom (wider FOV when zoomed out)
-	local fov = math.clamp(50 + (self.ZoomLevel - 50) * 0.3, 40, 90)
+	local fov = math.clamp(50 + (self.ZoomLevel - 50) * 0.3, 60, 90)
 	camera.FieldOfView = fov
 end
 
@@ -5909,7 +6471,7 @@ function CameraController:_setupMobilePinchZoom()
 		elseif state == Enum.UserInputState.Change then
 			local currentDistance = (touchPositions[1] - touchPositions[2]).Magnitude
 			local delta = currentDistance - lastPinchDistance
-			self.ZoomLevel = math.clamp(self.ZoomLevel - delta * 0.1, self.MinZoom, self.MaxZoom)
+			self.TargetZoomLevel = math.clamp(self.TargetZoomLevel - delta * 0.1, self.MinZoom, self.MaxZoom)
 			lastPinchDistance = currentDistance
 		end
 	end)
@@ -5919,7 +6481,7 @@ return CameraController
 ]]></string>
         </Properties>
       </Item>
-      <Item class="LocalScript" referent="61">
+      <Item class="LocalScript" referent="65">
         <Properties>
           <string name="Name">ClientInit</string>
           <string name="Source"><![CDATA[-- ClientInit.client.lua
@@ -5979,7 +6541,7 @@ print("[Client] Client initialized successfully!")
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="62">
+      <Item class="ModuleScript" referent="66">
         <Properties>
           <string name="Name">MobileControls</string>
           <string name="Source"><![CDATA[-- MobileControls.lua
@@ -6172,7 +6734,7 @@ return MobileControls
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="63">
+      <Item class="ModuleScript" referent="67">
         <Properties>
           <string name="Name">SnakeController</string>
           <string name="Source"><![CDATA[-- SnakeController.lua
@@ -6288,7 +6850,7 @@ return SnakeController
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="64">
+      <Item class="ModuleScript" referent="68">
         <Properties>
           <string name="Name">SnakeRenderer</string>
           <string name="Source"><![CDATA[-- SnakeRenderer.lua
@@ -6312,7 +6874,7 @@ SnakeRenderer._connections = {}
 function SnakeRenderer:UpdateSnakes(snakeData)
 	for userId, data in pairs(snakeData) do
 		-- Skip local player (rendered separately)
-		if userId ~= player.UserId then
+		if tonumber(userId) ~= player.UserId then
 			local variant = SnakeVariants.GetVariant(data.variantId)
 
 			if not self.OtherSnakes[userId] or self.OtherSnakes[userId].variantId ~= variant.id then
@@ -6455,16 +7017,29 @@ function SnakeRenderer:_interpolateSnakes(dt)
 		end
 
 		-- Interpolate body segments (follow head)
-		local positions = {snake.currentHeadPos}
+		local previousSegmentPos = snake.headPart.Position
 		for i, segment in ipairs(snake.bodyParts) do
-			local targetPos = positions[i]
 			local currentPos = segment.Position
-
-			-- Smooth follow
-			local newPos = currentPos:Lerp(targetPos - snake.targetDirection * i * SnakeConfig.SEGMENT_SPACING, alpha)
-			segment.Position = newPos
-
-			table.insert(positions, newPos)
+			
+			-- Calculate vector to the previous segment (or head)
+			local vectorToPrev = previousSegmentPos - currentPos
+			local distance = vectorToPrev.Magnitude
+			
+			-- If we are too far or too close, we want to be exactly SEGMENT_SPACING away
+			-- But for smooth rendering, we Lerp towards that desired position
+			
+			if distance > 0.1 then
+				local direction = vectorToPrev.Unit
+				local desiredPos = previousSegmentPos - (direction * SnakeConfig.SEGMENT_SPACING)
+				
+				-- Smoothly move towards the desired position
+				-- Using a higher alpha for the lead segments ensures they stick closer to the head
+				local segmentAlpha = SnakeConfig.CLIENT_INTERPOLATION_ALPHA
+				segment.Position = currentPos:Lerp(desiredPos, segmentAlpha)
+			end
+			
+			-- Update previousSegmentPos for the next iteration
+			previousSegmentPos = segment.Position
 		end
 	end
 end
@@ -6493,24 +7068,154 @@ return SnakeRenderer
 ]]></string>
         </Properties>
       </Item>
+      <Item class="LocalScript" referent="69">
+        <Properties>
+          <string name="Name">VisualEffects</string>
+          <string name="Source"><![CDATA[-- VisualEffects.client.lua
+-- Handles client-side visual effects (particles, sounds, etc.)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local remoteEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GameEvent")
+
+local VisualEffects = {}
+
+-- Create particle templates
+local function createEatParticle()
+	local emitter = Instance.new("ParticleEmitter")
+	emitter.Name = "EatEffect"
+	emitter.Texture = "rbxassetid://1266170131" -- Star texture
+	emitter.Color = ColorSequence.new(Color3.fromRGB(255, 215, 0))
+	emitter.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(1, 0)
+	})
+	emitter.Lifetime = NumberRange.new(0.5, 1)
+	emitter.Speed = NumberRange.new(5, 10)
+	emitter.SpreadAngle = Vector2.new(360, 360)
+	emitter.Rate = 0
+	emitter.Enabled = false
+	return emitter
+end
+
+local function createPowerUpParticle(color)
+	local emitter = Instance.new("ParticleEmitter")
+	emitter.Name = "PowerUpEffect"
+	emitter.Texture = "rbxassetid://243098098" -- Ring texture
+	emitter.Color = ColorSequence.new(color)
+	emitter.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.5, 5),
+		NumberSequenceKeypoint.new(1, 0)
+	})
+	emitter.Lifetime = NumberRange.new(1, 1.5)
+	emitter.Speed = NumberRange.new(0)
+	emitter.Rotation = NumberRange.new(0, 360)
+	emitter.RotSpeed = NumberRange.new(90)
+	emitter.Rate = 0
+	emitter.Enabled = false
+	return emitter
+end
+
+-- Play eat effect
+function VisualEffects:PlayEatEffect(position, amount)
+	local part = Instance.new("Part")
+	part.Transparency = 1
+	part.CanCollide = false
+	part.Anchored = true
+	part.Position = position
+	part.Parent = workspace
+	
+	local emitter = createEatParticle()
+	emitter.Parent = part
+	
+	-- Burst
+	emitter:Emit(math.min(20, amount * 2))
+	
+	-- Cleanup
+	task.delay(2, function()
+		part:Destroy()
+	end)
+end
+
+-- Play power-up effect
+function VisualEffects:PlayPowerUpEffect(position, type)
+	local color = Color3.fromRGB(255, 255, 255)
+	if type == "SPEED" then
+		color = Color3.fromRGB(50, 255, 50)
+	elseif type == "MAGNET" then
+		color = Color3.fromRGB(50, 50, 255)
+	elseif type == "SHIELD" then
+		color = Color3.fromRGB(255, 255, 50)
+	end
+	
+	local part = Instance.new("Part")
+	part.Transparency = 1
+	part.CanCollide = false
+	part.Anchored = true
+	part.Position = position
+	part.Parent = workspace
+	
+	local emitter = createPowerUpParticle(color)
+	emitter.Parent = part
+	
+	-- Burst
+	emitter:Emit(1)
+	
+	-- Cleanup
+	task.delay(2, function()
+		part:Destroy()
+	end)
+end
+
+-- Listen for events
+remoteEvent.OnClientEvent:Connect(function(eventType, ...)
+	if eventType == "FoodCollected" then
+		local amount = ...
+		-- We need position, but the event only sends amount. 
+		-- For now, play on local snake head if it's us.
+		-- Ideally, we'd send position from server.
+		
+		local character = workspace.Snakes:FindFirstChild(player.Name .. "_Head")
+		if character then
+			VisualEffects:PlayEatEffect(character.Position, amount)
+		end
+		
+	elseif eventType == "PowerUpActivated" then
+		local type, duration = ...
+		local character = workspace.Snakes:FindFirstChild(player.Name .. "_Head")
+		if character then
+			VisualEffects:PlayPowerUpEffect(character.Position, type)
+		end
+	end
+end)
+
+print("[VisualEffects] Initialized")
+
+return VisualEffects
+]]></string>
+        </Properties>
+      </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="65">
+  <Item class="Workspace" referent="70">
     <Properties>
       <string name="Name">Workspace</string>
       <bool name="NeedsPivotMigration">false</bool>
     </Properties>
-    <Item class="Folder" referent="66">
+    <Item class="Folder" referent="71">
       <Properties>
         <string name="Name">Arena</string>
       </Properties>
     </Item>
-    <Item class="Folder" referent="67">
+    <Item class="Folder" referent="72">
       <Properties>
         <string name="Name">Food</string>
       </Properties>
     </Item>
-    <Item class="Folder" referent="68">
+    <Item class="Folder" referent="73">
       <Properties>
         <string name="Name">Snakes</string>
       </Properties>
