@@ -162,16 +162,29 @@ function SnakeRenderer:_interpolateSnakes(dt)
 		end
 
 		-- Interpolate body segments (follow head)
-		local positions = {snake.currentHeadPos}
+		local previousSegmentPos = snake.headPart.Position
 		for i, segment in ipairs(snake.bodyParts) do
-			local targetPos = positions[i]
 			local currentPos = segment.Position
-
-			-- Smooth follow
-			local newPos = currentPos:Lerp(targetPos - snake.targetDirection * i * SnakeConfig.SEGMENT_SPACING, alpha)
-			segment.Position = newPos
-
-			table.insert(positions, newPos)
+			
+			-- Calculate vector to the previous segment (or head)
+			local vectorToPrev = previousSegmentPos - currentPos
+			local distance = vectorToPrev.Magnitude
+			
+			-- If we are too far or too close, we want to be exactly SEGMENT_SPACING away
+			-- But for smooth rendering, we Lerp towards that desired position
+			
+			if distance > 0.1 then
+				local direction = vectorToPrev.Unit
+				local desiredPos = previousSegmentPos - (direction * SnakeConfig.SEGMENT_SPACING)
+				
+				-- Smoothly move towards the desired position
+				-- Using a higher alpha for the lead segments ensures they stick closer to the head
+				local segmentAlpha = SnakeConfig.CLIENT_INTERPOLATION_ALPHA
+				segment.Position = currentPos:Lerp(desiredPos, segmentAlpha)
+			end
+			
+			-- Update previousSegmentPos for the next iteration
+			previousSegmentPos = segment.Position
 		end
 	end
 end

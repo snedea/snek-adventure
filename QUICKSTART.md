@@ -85,6 +85,7 @@ open dist/SlitherSimulator.rbxlx
 - **C**: Open customization menu (in-game)
 - **Space/W**: Boost
 - **Shift/S**: Brake
+- **Z**: Toggle Camera Zoom (POV/Overhead)
 
 ### Verify Game is Working
 
