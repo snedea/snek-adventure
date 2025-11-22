@@ -61,7 +61,7 @@ function SnakeRenderer:_createSnakeVisuals(userId, data, variant)
 	head.Name = "OtherSnake_" .. userId .. "_Head"
 	head.Size = variant.headSize or Vector3.new(SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE)
 	head.Shape = (variant.headShape == "Block") and Enum.PartType.Block or Enum.PartType.Ball
-	head.Material = variant.material or Enum.Material.Neon
+	head.Material = variant.material or Enum.Material.SmoothPlastic
 	head.Transparency = variant.transparency or 0
 	head.Color = variant.color
 	head.CanCollide = false
@@ -82,7 +82,7 @@ function SnakeRenderer:_createSnakeVisuals(userId, data, variant)
 		else
 			segment.Shape = Enum.PartType.Ball
 		end
-		segment.Material = variant.material or Enum.Material.Neon
+		segment.Material = variant.material or Enum.Material.SmoothPlastic
 		segment.Transparency = variant.transparency or 0
 		segment.Color = variant.color
 		segment.CanCollide = false
@@ -146,7 +146,7 @@ function SnakeRenderer:_interpolateSnakes(dt)
 			else
 				segment.Shape = Enum.PartType.Ball
 			end
-			segment.Material = snake.variant.material or Enum.Material.Neon
+			segment.Material = snake.variant.material or Enum.Material.SmoothPlastic
 			segment.Transparency = snake.variant.transparency or 0
 			segment.Color = snake.targetColor
 			segment.CanCollide = false

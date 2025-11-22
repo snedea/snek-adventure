@@ -105,7 +105,7 @@ function SnakeManager:CreateSnake(player, spawnShieldDuration)
 	head.Name = player.Name .. "_Head"
 	head.Size = variant.headSize or Vector3.new(SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE)
 	head.Shape = (variant.headShape == "Block") and Enum.PartType.Block or Enum.PartType.Ball
-	head.Material = variant.material or Enum.Material.Neon
+	head.Material = variant.material or Enum.Material.SmoothPlastic
 	head.Color = variant.color
 	head.Transparency = variant.transparency or 0
 	head.CanCollide = false
@@ -164,7 +164,7 @@ function SnakeManager:CreateSnake(player, spawnShieldDuration)
 		local segment = self._bodySegmentPool:Acquire()
 		segment.Size = variant.bodySize or Vector3.new(SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE)
 		segment.Shape = (variant.bodyShape == "Block") and Enum.PartType.Block or (variant.bodyShape == "Cylinder" and Enum.PartType.Cylinder or Enum.PartType.Ball)
-		segment.Material = variant.material or Enum.Material.Neon
+		segment.Material = variant.material or Enum.Material.SmoothPlastic
 		segment.Color = variant.color
 		segment.Transparency = variant.transparency or 0
 		segment.Position = spawnPos - Vector3.new(i * SnakeConfig.SEGMENT_SPACING, 0, 0)
