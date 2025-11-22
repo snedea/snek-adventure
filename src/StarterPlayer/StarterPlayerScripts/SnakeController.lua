@@ -40,27 +40,51 @@ function SnakeController:Initialize()
 		end
 	end)
 
-	-- Boost/Brake keys
+	-- Boost/Brake keys and gamepad buttons
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then
 			return
 		end
 
+		-- Keyboard
 		if input.KeyCode == Enum.KeyCode.Space or input.KeyCode == Enum.KeyCode.W then
 			-- Boost
 			remoteEvent:FireServer("ActivateBoost")
 		elseif input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.S then
 			-- Brake
 			remoteEvent:FireServer("ActivateBrake")
+		-- Gamepad buttons
+		elseif input.KeyCode == Enum.KeyCode.ButtonR2 or input.KeyCode == Enum.KeyCode.ButtonR1 then
+			-- Right trigger/bumper = Boost
+			remoteEvent:FireServer("ActivateBoost")
+		elseif input.KeyCode == Enum.KeyCode.ButtonL2 or input.KeyCode == Enum.KeyCode.ButtonL1 then
+			-- Left trigger/bumper = Brake
+			remoteEvent:FireServer("ActivateBrake")
 		end
 	end)
 
+	-- Gamepad thumbstick input (processed every frame)
 	-- Send direction updates at throttled rate
 	RunService.Heartbeat:Connect(function()
+		-- Check for gamepad input
+		if UserInputService.GamepadEnabled then
+			local thumbstick = UserInputService:GetGamepadState(Enum.UserInputType.Gamepad1)
+			for _, inputObject in ipairs(thumbstick) do
+				if inputObject.KeyCode == Enum.KeyCode.Thumbstick1 then
+					local stickPos = inputObject.Position
+					-- Left stick controls direction
+					if stickPos.Magnitude > 0.2 then -- Deadzone
+						local direction = Vector3.new(stickPos.X, 0, -stickPos.Y)
+						self.CurrentDirection = direction.Unit
+					end
+				end
+			end
+		end
+		
 		self:_sendDirectionUpdate()
 	end)
 
-	print("[SnakeController] Initialized")
+	print("[SnakeController] Initialized (Gamepad support enabled)")
 end
 
 -- Handles mouse input
