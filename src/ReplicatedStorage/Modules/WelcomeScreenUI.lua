@@ -58,7 +58,7 @@ function WelcomeScreenUI.Show()
 		title.Position = UDim2.new(0.5, -300, 0.05, 0)
 		title.BackgroundTransparency = 1
 		title.Font = Enum.Font.GothamBold
-		title.Text = "SLITHER SIMULATOR"
+		title.Text = "SNEK ADVENTURE"
 		title.TextColor3 = Color3.fromRGB(255, 255, 255)
 		title.TextSize = 48
 		title.TextStrokeTransparency = 0.5

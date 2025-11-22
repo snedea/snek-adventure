@@ -66,21 +66,27 @@ function SnakeController:Initialize()
 	-- Gamepad thumbstick input (processed every frame)
 	-- Send direction updates at throttled rate
 	RunService.Heartbeat:Connect(function()
-		-- Check for gamepad input
+		-- Check for gamepad input (more efficient method)
 		if UserInputService.GamepadEnabled then
-			local thumbstick = UserInputService:GetGamepadState(Enum.UserInputType.Gamepad1)
-			for _, inputObject in ipairs(thumbstick) do
+			local stickInput = UserInputService:GetGamepadState(Enum.UserInputType.Gamepad1)
+
+			-- Find left thumbstick input
+			for _, inputObject in ipairs(stickInput) do
 				if inputObject.KeyCode == Enum.KeyCode.Thumbstick1 then
 					local stickPos = inputObject.Position
-					-- Left stick controls direction
-					if stickPos.Magnitude > 0.2 then -- Deadzone
+
+					-- Apply deadzone (0.2) to prevent drift
+					if stickPos.Magnitude > 0.2 then
+						-- Convert stick position to world direction
+						-- X = left/right, Y = up/down (inverted for proper direction)
 						local direction = Vector3.new(stickPos.X, 0, -stickPos.Y)
 						self.CurrentDirection = direction.Unit
 					end
+					break -- Found thumbstick, no need to continue loop
 				end
 			end
 		end
-		
+
 		self:_sendDirectionUpdate()
 	end)
 

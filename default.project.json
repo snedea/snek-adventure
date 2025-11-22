@@ -1,5 +1,5 @@
 {
-  "name": "SlitherSimulator",
+  "name": "SnekAdventure",
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {

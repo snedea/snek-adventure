@@ -5,7 +5,7 @@ local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
-print("[GameInitializer] Starting Slither Simulator server...")
+print("[GameInitializer] Starting Snek Adventure server...")
 
 -- Load services
 -- Load services

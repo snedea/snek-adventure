@@ -1,6 +1,6 @@
-# Roblox Slither Simulator - Complete Implementation
+# Snek Adventure - Complete Implementation
 
-A fully-featured multiplayer Slither.io-style snake game built in Roblox with server-authoritative physics, 20-rank progression system, and cross-platform support.
+A fully-featured multiplayer snake adventure game built in Roblox with server-authoritative physics, 20-rank progression system, multiple arenas, and cross-platform support including gamepad controls.
 
 ## 🎯 Pattern Library Feature - Build Smarter, Not Harder
 

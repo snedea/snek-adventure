@@ -1,5 +1,5 @@
 -- ClientInit.client.lua
--- Client initialization script for Slither Simulator
+-- Client initialization script for Snek Adventure
 
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
@@ -40,7 +40,7 @@ local MobileControls = require(playerScripts:WaitForChild("MobileControls"))
 local WelcomeScreenUI = require(ReplicatedStorage.Modules.WelcomeScreenUI)
 
 -- Initialize in order
-print("[Client] Initializing Slither Simulator client...")
+print("[Client] Initializing Snek Adventure client...")
 
 CameraController:Initialize()
 SnakeController:Initialize()

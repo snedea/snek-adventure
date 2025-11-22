@@ -636,7 +636,7 @@ function WelcomeScreenUI.Show()
 		title.Position = UDim2.new(0.5, -300, 0.05, 0)
 		title.BackgroundTransparency = 1
 		title.Font = Enum.Font.GothamBold
-		title.Text = "SLITHER SIMULATOR"
+		title.Text = "SNEK ADVENTURE"
 		title.TextColor3 = Color3.fromRGB(255, 255, 255)
 		title.TextSize = 48
 		title.TextStrokeTransparency = 0.5
@@ -1405,7 +1405,7 @@ local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
-print("[GameInitializer] Starting Slither Simulator server...")
+print("[GameInitializer] Starting Snek Adventure server...")
 
 -- Load services
 -- Load services
@@ -6485,7 +6485,7 @@ return CameraController
         <Properties>
           <string name="Name">ClientInit</string>
           <string name="Source"><![CDATA[-- ClientInit.client.lua
--- Client initialization script for Slither Simulator
+-- Client initialization script for Snek Adventure
 
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
@@ -6526,7 +6526,7 @@ local MobileControls = require(playerScripts:WaitForChild("MobileControls"))
 local WelcomeScreenUI = require(ReplicatedStorage.Modules.WelcomeScreenUI)
 
 -- Initialize in order
-print("[Client] Initializing Slither Simulator client...")
+print("[Client] Initializing Snek Adventure client...")
 
 CameraController:Initialize()
 SnakeController:Initialize()
