@@ -6,6 +6,7 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SnakeConfig = require(ReplicatedStorage.Modules.SnakeConfig)
+local SnakeVariants = require(ReplicatedStorage.Modules.SnakeVariants)
 local Maid = require(ReplicatedStorage.Shared.Maid)
 local SpatialGrid = require(ReplicatedStorage.Shared.SpatialGrid)
 local BodySegmentPool = require(ReplicatedStorage.Shared.BodySegmentPool)
@@ -13,6 +14,7 @@ local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local SnakeManager = {}
 SnakeManager._snakes = {} -- [player] = snakeData
+SnakeManager._playerVariants = {} -- [player] = variantId
 SnakeManager._spatialGrid = nil
 SnakeManager._bodySegmentPool = nil
 SnakeManager._snakeParent = nil
@@ -48,18 +50,7 @@ function SnakeManager:Initialize(dependencies)
 
 	self._bodySegmentPool = BodySegmentPool.new(self._snakeParent)
 
-	-- Create snakes for existing players
-	for _, player in ipairs(Players:GetPlayers()) do
-		task.spawn(function()
-			self:CreateSnake(player)
-		end)
-	end
-
-	-- Handle new players
-	Players.PlayerAdded:Connect(function(player)
-		task.wait(1) -- Wait for data to load
-		self:CreateSnake(player)
-	end)
+	-- DON'T auto-create snakes - wait for variant selection from welcome screen
 
 	-- Handle player leaving
 	Players.PlayerRemoving:Connect(function(player)
@@ -82,39 +73,100 @@ function SnakeManager:Initialize(dependencies)
 	print("[SnakeManager] Initialized")
 end
 
+-- Sets the player's selected snake variant
+function SnakeManager:SetPlayerVariant(player, variantId)
+	self._playerVariants[player] = variantId
+	print("[SnakeManager] Player", player.Name, "selected variant:", variantId)
+end
+
+-- Gets the player's selected variant (or default)
+function SnakeManager:GetPlayerVariant(player)
+	return self._playerVariants[player] or "classic"
+end
+
 -- Creates a snake for player
-function SnakeManager:CreateSnake(player)
+function SnakeManager:CreateSnake(player, spawnShieldDuration)
 	-- Cleanup existing snake
 	if self._snakes[player] then
 		self:KillSnake(player, nil, true)
 	end
 
-	-- Get player customization
+	-- Get player variant and customization
+	local variantId = self:GetPlayerVariant(player)
+	local variant = SnakeVariants.GetVariant(variantId)
 	local customization = self.PlayerDataManager:GetCustomization(player)
 	local rank = self.PlayerDataManager:GetRank(player)
 
 	-- Random spawn position
 	local spawnPos = self:_getRandomSpawnPosition()
 
-	-- Create head
+	-- Create head with variant properties
 	local head = Instance.new("Part")
 	head.Name = player.Name .. "_Head"
-	head.Size = Vector3.new(SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE)
-	head.Shape = Enum.PartType.Ball
-	head.Material = Enum.Material.Neon
-	head.Color = customization.color
+	head.Size = variant.headSize or Vector3.new(SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE)
+	head.Shape = (variant.headShape == "Block") and Enum.PartType.Block or Enum.PartType.Ball
+	head.Material = variant.material or Enum.Material.Neon
+	head.Color = variant.color
+	head.Transparency = variant.transparency or 0
 	head.CanCollide = false
 	head.Anchored = true
 	head.Position = spawnPos
 	head.TopSurface = Enum.SurfaceType.Smooth
 	head.BottomSurface = Enum.SurfaceType.Smooth
 	head.Parent = self._snakeParent
+	
+	-- Create Name Tag
+	local nameTag = Instance.new("BillboardGui")
+	nameTag.Name = "NameTag"
+	nameTag.Size = UDim2.new(0, 200, 0, 50)
+	nameTag.StudsOffset = Vector3.new(0, 3, 0)
+	nameTag.AlwaysOnTop = true
+	nameTag.Parent = head
+	
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Name = "NameLabel"
+	nameLabel.Size = UDim2.new(1, 0, 1, 0)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Text = player.Name
+	nameLabel.TextColor3 = Color3.new(1, 1, 1)
+	nameLabel.TextStrokeTransparency = 0
+	nameLabel.TextScaled = true
+	nameLabel.Font = Enum.Font.GothamBold
+	nameLabel.Parent = nameTag
 
-	-- Create body segments
+	-- Add Trail
+	local att0 = Instance.new("Attachment")
+	att0.Name = "TrailAtt0"
+	att0.Position = Vector3.new(0, 0.5, 0)
+	att0.Parent = head
+	
+	local att1 = Instance.new("Attachment")
+	att1.Name = "TrailAtt1"
+	att1.Position = Vector3.new(0, -0.5, 0)
+	att1.Parent = head
+	
+	local trail = Instance.new("Trail")
+	trail.Name = "SnakeTrail"
+	trail.Attachment0 = att0
+	trail.Attachment1 = att1
+	trail.Color = ColorSequence.new(variant.color)
+	trail.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.5),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	trail.Lifetime = 0.5
+	trail.MinLength = 0.1
+	trail.Parent = head
+
+	-- Create body segments with variant properties
 	local bodySegments = {}
 	for i = 1, SnakeConfig.INITIAL_SEGMENTS do
 		local segment = self._bodySegmentPool:Acquire()
-		segment.Color = customization.color
+		segment.Size = variant.bodySize or Vector3.new(SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE)
+		segment.Shape = (variant.bodyShape == "Block") and Enum.PartType.Block or (variant.bodyShape == "Cylinder" and Enum.PartType.Cylinder or Enum.PartType.Ball)
+		segment.Material = variant.material or Enum.Material.Neon
+		segment.Color = variant.color
+		segment.Transparency = variant.transparency or 0
 		segment.Position = spawnPos - Vector3.new(i * SnakeConfig.SEGMENT_SPACING, 0, 0)
 		table.insert(bodySegments, segment)
 
@@ -131,6 +183,7 @@ function SnakeManager:CreateSnake(player)
 		player = player,
 		head = head,
 		bodySegments = bodySegments,
+		variantId = variantId,
 		maid = maid,
 		speed = SnakeConfig.BASE_SPEED,
 		direction = Vector3.new(1, 0, 0), -- Initial direction: right
@@ -140,16 +193,20 @@ function SnakeManager:CreateSnake(player)
 		brakeCooldownRemaining = 0,
 		lastPosition = spawnPos,
 		lastMoveTime = os.clock(),
-		color = customization.color,
+		color = variant.color,
 		mouth = customization.mouth,
 		eyes = customization.eyes,
 		currentGold = 0, -- Session gold (resets on death)
+		
+		-- Power-ups
+		activePowerUps = {}, -- [type] = endTime
+		magnetMultiplier = 1,
 	}
 
 	self._snakes[player] = snake
 
 	-- Activate shield
-	local shieldDuration = self.RankService:GetShieldDuration(rank)
+	local shieldDuration = spawnShieldDuration or self.RankService:GetShieldDuration(rank)
 	self.ShieldManager:ActivateShield(player, shieldDuration)
 
 	print(string.format("[SnakeManager] Created snake for %s", player.Name))
@@ -221,6 +278,31 @@ function SnakeManager:ActivateBrake(player)
 	snake.brakeCooldownRemaining = cooldown
 
 	print(string.format("[SnakeManager] %s activated brake", player.Name))
+end
+
+-- Activates power-up
+function SnakeManager:ActivatePowerUp(player, powerUpType, data)
+	local snake = self._snakes[player]
+	if not snake then return end
+	
+	local duration = data.duration or 10
+	snake.activePowerUps[powerUpType] = os.clock() + duration
+	
+	if powerUpType == "SPEED" then
+		snake.speed = SnakeConfig.BASE_SPEED * 1.5
+	elseif powerUpType == "MAGNET" then
+		snake.magnetMultiplier = data.rangeMultiplier or 2
+	elseif powerUpType == "SHIELD" then
+		self.ShieldManager:ActivateShield(player, duration)
+	end
+	
+	-- Notify client
+	local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
+	if remoteEvent then
+		remoteEvent:FireClient(player, "PowerUpActivated", powerUpType, duration)
+	end
+	
+	print(string.format("[SnakeManager] %s collected %s", player.Name, powerUpType))
 end
 
 -- Grows snake
@@ -308,6 +390,22 @@ function SnakeManager:_updateSnakes(dt)
 			snake.brakeActive = false
 			snake.speed = SnakeConfig.BASE_SPEED
 		end
+		
+		-- Check power-ups
+		local now = os.clock()
+		for type, endTime in pairs(snake.activePowerUps) do
+			if now >= endTime then
+				snake.activePowerUps[type] = nil
+				
+				if type == "SPEED" then
+					if not snake.boostActive and not snake.brakeActive then
+						snake.speed = SnakeConfig.BASE_SPEED
+					end
+				elseif type == "MAGNET" then
+					snake.magnetMultiplier = 1
+				end
+			end
+		end
 
 		-- Move head
 		local movement = snake.direction * snake.speed * dt
@@ -323,7 +421,7 @@ function SnakeManager:_updateSnakes(dt)
 		snake.head.Position = newPosition
 
 		-- Update body segments (follow head)
-		self:_updateBodySegments(snake)
+		self:_updateBodySegments(snake, dt)
 
 		-- Check collisions (if not shielded)
 		if not self.ShieldManager:IsShielded(player) then
@@ -336,27 +434,35 @@ function SnakeManager:_updateSnakes(dt)
 end
 
 -- Updates body segments to follow head
-function SnakeManager:_updateBodySegments(snake)
+function SnakeManager:_updateBodySegments(snake, dt)
 	local positions = {snake.head.Position}
 
-	-- Calculate segment positions
+	-- Calculate segment positions - each segment follows the one in front
 	for i, segment in ipairs(snake.bodySegments) do
 		local targetPos = positions[i]
 		local currentPos = segment.Position
 
-		-- Interpolate towards target
-		local direction = (targetPos - currentPos).Unit
-		local distance = (targetPos - currentPos).Magnitude
+		-- Calculate direction and distance to target (previous segment)
+		local direction = (targetPos - currentPos)
+		local distance = direction.Magnitude
 
+		local newPos
+		-- Move segment toward target position, maintaining spacing
 		if distance > SnakeConfig.SEGMENT_SPACING then
-			local newPos = currentPos + direction * math.min(distance - SnakeConfig.SEGMENT_SPACING, snake.speed * RunService.Heartbeat:Wait())
-			segment.Position = newPos
-
-			-- Update spatial grid
-			self._spatialGrid:Insert(segment, newPos)
+			-- Calculate how far to move (don't overshoot)
+			local moveDistance = math.min(distance - SnakeConfig.SEGMENT_SPACING, snake.speed * dt)
+			newPos = currentPos + direction.Unit * moveDistance
+		else
+			-- Already at correct spacing
+			newPos = currentPos
 		end
 
-		table.insert(positions, segment.Position)
+		segment.Position = newPos
+
+		-- Update spatial grid
+		self._spatialGrid:Insert(segment, newPos)
+
+		table.insert(positions, newPos)
 	end
 end
 
@@ -404,7 +510,7 @@ end
 -- Checks food collection with magnet
 function SnakeManager:_checkFoodCollection(player, snake)
 	local rank = self.PlayerDataManager:GetRank(player)
-	local magnetRange = self.RankService:GetMagnetRange(rank)
+	local magnetRange = self.RankService:GetMagnetRange(rank) * (snake.magnetMultiplier or 1)
 
 	local nearbyFood = self.FoodSpawner:GetFoodInRange(snake.head.Position, magnetRange)
 
@@ -412,6 +518,13 @@ function SnakeManager:_checkFoodCollection(player, snake)
 		local success, foodData = self.FoodSpawner:CollectFood(player, food)
 
 		if success and foodData then
+			-- Check if power-up
+			if string.sub(foodData.type, 1, 8) == "POWERUP_" then
+				local powerUpType = string.sub(foodData.type, 9)
+				self:ActivatePowerUp(player, powerUpType, foodData.data)
+				continue
+			end
+			
 			-- Award gold
 			local FoodConfig = require(ReplicatedStorage.Modules.FoodConfig)
 			local goldReward = FoodConfig.CalculateReward(foodData.data, rank)
@@ -455,17 +568,28 @@ function SnakeManager:_broadcastSnakeUpdates()
 	local updates = {}
 
 	for player, snake in pairs(self._snakes) do
+		local variant = SnakeVariants.GetVariant(snake.variantId)
 		updates[player.UserId] = {
 			headPos = snake.head.Position,
 			direction = snake.direction,
 			length = #snake.bodySegments,
-			color = snake.color,
+			color = variant.color,
+			variantId = snake.variantId,
+			headShape = variant.headShape,
+			bodyShape = variant.bodyShape,
+			headSize = variant.headSize,
+			bodySize = variant.bodySize,
+			material = variant.material,
+			transparency = variant.transparency,
 		}
 	end
 
 	-- Broadcast to all players
 	local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
 	if remoteEvent then
+		if not next(updates) then
+			return
+		end
 		for _, player in ipairs(Players:GetPlayers()) do
 			remoteEvent:FireClient(player, "UpdateSnakes", updates)
 		end

@@ -57,6 +57,9 @@
         },
         "ShieldTimer": {
           "$path": "src/StarterGui/ShieldTimer"
+        },
+        "WelcomeScreen": {
+          "$path": "src/StarterGui/WelcomeScreen"
         }
       }
     },

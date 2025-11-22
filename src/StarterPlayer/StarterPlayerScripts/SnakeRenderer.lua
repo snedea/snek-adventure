@@ -7,10 +7,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local SnakeConfig = require(ReplicatedStorage.Modules.SnakeConfig)
+local SnakeVariants = require(ReplicatedStorage.Modules.SnakeVariants)
 local remoteEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GameEvent")
 
 local SnakeRenderer = {}
-SnakeRenderer.OtherSnakes = {} -- [userId] = {headPart, bodyParts, targetData}
+SnakeRenderer.OtherSnakes = {} -- [userId] = {headPart, bodyParts, targetData, variantId}
 SnakeRenderer._initialized = false
 SnakeRenderer._connections = {}
 
@@ -18,9 +19,12 @@ SnakeRenderer._connections = {}
 function SnakeRenderer:UpdateSnakes(snakeData)
 	for userId, data in pairs(snakeData) do
 		-- Skip local player (rendered separately)
-		if userId ~= player.UserId then
-			if not self.OtherSnakes[userId] then
-				self:_createSnakeVisuals(userId, data)
+		if tonumber(userId) ~= player.UserId then
+			local variant = SnakeVariants.GetVariant(data.variantId)
+
+			if not self.OtherSnakes[userId] or self.OtherSnakes[userId].variantId ~= variant.id then
+				self:_removeSnakeVisuals(userId)
+				self:_createSnakeVisuals(userId, data, variant)
 			end
 
 			-- Update target data for interpolation
@@ -29,7 +33,8 @@ function SnakeRenderer:UpdateSnakes(snakeData)
 				snake.targetHeadPos = data.headPos
 				snake.targetDirection = data.direction
 				snake.targetLength = data.length
-				snake.targetColor = data.color
+				snake.targetColor = variant.color
+				snake.variant = variant
 			end
 		end
 	end
@@ -43,19 +48,22 @@ function SnakeRenderer:UpdateSnakes(snakeData)
 end
 
 -- Creates visual representation for other snake
-function SnakeRenderer:_createSnakeVisuals(userId, data)
+function SnakeRenderer:_createSnakeVisuals(userId, data, variant)
 	local snakesFolder = workspace:FindFirstChild("Snakes")
 	if not snakesFolder then
 		return
 	end
 
+	variant = variant or SnakeVariants.GetVariant(data.variantId)
+
 	-- Create head
 	local head = Instance.new("Part")
 	head.Name = "OtherSnake_" .. userId .. "_Head"
-	head.Size = Vector3.new(SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE)
-	head.Shape = Enum.PartType.Ball
-	head.Material = Enum.Material.Neon
-	head.Color = data.color
+	head.Size = variant.headSize or Vector3.new(SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE)
+	head.Shape = (variant.headShape == "Block") and Enum.PartType.Block or Enum.PartType.Ball
+	head.Material = variant.material or Enum.Material.Neon
+	head.Transparency = variant.transparency or 0
+	head.Color = variant.color
 	head.CanCollide = false
 	head.Anchored = true
 	head.Position = data.headPos
@@ -66,10 +74,17 @@ function SnakeRenderer:_createSnakeVisuals(userId, data)
 	for i = 1, data.length do
 		local segment = Instance.new("Part")
 		segment.Name = "OtherSnake_" .. userId .. "_Body_" .. i
-		segment.Size = Vector3.new(SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE)
-		segment.Shape = Enum.PartType.Ball
-		segment.Material = Enum.Material.Neon
-		segment.Color = data.color
+		segment.Size = variant.bodySize or Vector3.new(SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE)
+		if variant.bodyShape == "Block" then
+			segment.Shape = Enum.PartType.Block
+		elseif variant.bodyShape == "Cylinder" then
+			segment.Shape = Enum.PartType.Cylinder
+		else
+			segment.Shape = Enum.PartType.Ball
+		end
+		segment.Material = variant.material or Enum.Material.Neon
+		segment.Transparency = variant.transparency or 0
+		segment.Color = variant.color
 		segment.CanCollide = false
 		segment.Anchored = true
 		segment.Position = data.headPos - Vector3.new(i * SnakeConfig.SEGMENT_SPACING, 0, 0)
@@ -85,7 +100,9 @@ function SnakeRenderer:_createSnakeVisuals(userId, data)
 		currentHeadPos = data.headPos,
 		targetDirection = data.direction,
 		targetLength = data.length,
-		targetColor = data.color,
+		targetColor = variant.color,
+		variantId = variant.id,
+		variant = variant,
 	}
 end
 
@@ -121,9 +138,16 @@ function SnakeRenderer:_interpolateSnakes(dt)
 		while #snake.bodyParts < snake.targetLength do
 			local segment = Instance.new("Part")
 			segment.Name = "OtherSnake_" .. userId .. "_Body_" .. #snake.bodyParts + 1
-			segment.Size = Vector3.new(SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE)
-			segment.Shape = Enum.PartType.Ball
-			segment.Material = Enum.Material.Neon
+			segment.Size = snake.variant.bodySize or Vector3.new(SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE)
+			if snake.variant.bodyShape == "Block" then
+				segment.Shape = Enum.PartType.Block
+			elseif snake.variant.bodyShape == "Cylinder" then
+				segment.Shape = Enum.PartType.Cylinder
+			else
+				segment.Shape = Enum.PartType.Ball
+			end
+			segment.Material = snake.variant.material or Enum.Material.Neon
+			segment.Transparency = snake.variant.transparency or 0
 			segment.Color = snake.targetColor
 			segment.CanCollide = false
 			segment.Anchored = true

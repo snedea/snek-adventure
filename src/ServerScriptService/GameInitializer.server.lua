@@ -47,7 +47,14 @@ local remoteEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild(
 
 -- Client → Server event handlers
 remoteEvent.OnServerEvent:Connect(function(player, eventType, ...)
-	if eventType == "MoveSnake" then
+	if eventType == "SelectSnakeVariant" then
+		local variantId = ...
+		-- Set the player's selected variant
+		SnakeManager:SetPlayerVariant(player, variantId)
+		-- Create snake with selected variant and fixed spawn shield
+		SnakeManager:CreateSnake(player, 10)
+
+	elseif eventType == "MoveSnake" then
 		local direction = ...
 		SnakeManager:MoveSnake(player, direction)
 

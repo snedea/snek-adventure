@@ -33,6 +33,29 @@ local FoodConfig = {
 			color = Color3.fromRGB(255, 100, 200),
 		},
 	},
+	
+	-- Power-ups
+	POWERUPS = {
+		SPEED = {
+			size = 5,
+			color = Color3.fromRGB(50, 255, 50), -- Green
+			duration = 10,
+			weight = 2,
+		},
+		MAGNET = {
+			size = 5,
+			color = Color3.fromRGB(50, 50, 255), -- Blue
+			duration = 15,
+			rangeMultiplier = 3,
+			weight = 2,
+		},
+		SHIELD = {
+			size = 5,
+			color = Color3.fromRGB(255, 255, 50), -- Yellow
+			duration = 5,
+			weight = 1,
+		},
+	},
 
 	-- Scatter (on snake death)
 	SCATTER_PERCENTAGE = 0.5, -- Percentage of snake value scattered

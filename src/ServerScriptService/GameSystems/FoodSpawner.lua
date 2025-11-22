@@ -70,8 +70,14 @@ function FoodSpawner:SpawnFood(count)
 
 		-- Check minimum distance (Poisson disk)
 		if self:_isValidSpawnPosition(position) then
-			local foodType, foodData = FoodConfig.GetRandomFoodType()
-			self:_createFood(position, foodType, foodData)
+			-- 5% chance for power-up
+			if math.random() < 0.05 then
+				local powerUpType, powerUpData = self:_getRandomPowerUp()
+				self:_createFood(position, "POWERUP_" .. powerUpType, powerUpData)
+			else
+				local foodType, foodData = FoodConfig.GetRandomFoodType()
+				self:_createFood(position, foodType, foodData)
+			end
 			spawned = spawned + 1
 		end
 	end
@@ -79,6 +85,26 @@ function FoodSpawner:SpawnFood(count)
 	if spawned > 0 then
 		print(string.format("[FoodSpawner] Spawned %d food", spawned))
 	end
+end
+
+-- Gets random power-up type
+function FoodSpawner:_getRandomPowerUp()
+	local totalWeight = 0
+	for _, data in pairs(FoodConfig.POWERUPS) do
+		totalWeight = totalWeight + data.weight
+	end
+
+	local random = math.random() * totalWeight
+	local currentWeight = 0
+
+	for typeName, data in pairs(FoodConfig.POWERUPS) do
+		currentWeight = currentWeight + data.weight
+		if random <= currentWeight then
+			return typeName, data
+		end
+	end
+	
+	return "SPEED", FoodConfig.POWERUPS.SPEED
 end
 
 -- Checks if spawn position is valid (Poisson disk)

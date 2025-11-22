@@ -308,7 +308,7 @@ local SnakeConfig = {
 	ROTATION_SPEED = 5, -- Radians per second for turning
 
 	-- Body Segments
-	SEGMENT_SPACING = 3, -- Studs between segments
+	SEGMENT_SPACING = 2.5, -- Studs between segments (compact tail)
 	INITIAL_SEGMENTS = 5, -- Starting body segment count
 	MAX_SEGMENTS = 100, -- Maximum snake length
 	SEGMENT_SIZE = 4, -- Studs diameter for body segments
@@ -341,22 +341,421 @@ return SnakeConfig
 ]]></string>
         </Properties>
       </Item>
-    </Item>
-    <Item class="Folder" referent="6">
-      <Properties>
-        <string name="Name">RemoteEvents</string>
-      </Properties>
-      <Item class="RemoteEvent" referent="7">
+      <Item class="ModuleScript" referent="6">
         <Properties>
-          <string name="Name">GameEvent</string>
+          <string name="Name">SnakeVariants</string>
+          <string name="Source"><![CDATA[-- SnakeVariants.lua
+-- Different snake character types with unique visual styles
+
+local SnakeVariants = {
+	{
+		id = "classic",
+		name = "Classic Viper",
+		description = "The original snake",
+		color = Color3.fromRGB(255, 100, 100), -- Red
+		headShape = "Ball",
+		bodyShape = "Ball",
+		headSize = Vector3.new(6, 6, 6),
+		bodySize = Vector3.new(4, 4, 4),
+		material = Enum.Material.Neon,
+		unlocked = true, -- Always available
+	},
+	{
+		id = "emerald",
+		name = "Emerald Python",
+		description = "Sleek and green",
+		color = Color3.fromRGB(50, 255, 100), -- Bright green
+		headShape = "Ball",
+		bodyShape = "Ball",
+		headSize = Vector3.new(6, 6, 6),
+		bodySize = Vector3.new(4, 4, 4),
+		material = Enum.Material.Neon,
+		unlocked = true,
+	},
+	{
+		id = "sapphire",
+		name = "Sapphire Serpent",
+		description = "Cool blue scales",
+		color = Color3.fromRGB(100, 150, 255), -- Blue
+		headShape = "Ball",
+		bodyShape = "Ball",
+		headSize = Vector3.new(6, 6, 6),
+		bodySize = Vector3.new(4, 4, 4),
+		material = Enum.Material.Neon,
+		unlocked = true,
+	},
+	{
+		id = "golden",
+		name = "Golden Cobra",
+		description = "Shimmering gold",
+		color = Color3.fromRGB(255, 215, 0), -- Gold
+		headShape = "Ball",
+		bodyShape = "Cylinder",
+		headSize = Vector3.new(6, 6, 6),
+		bodySize = Vector3.new(4, 4, 4),
+		material = Enum.Material.Neon,
+		unlocked = true,
+	},
+	{
+		id = "amethyst",
+		name = "Amethyst Adder",
+		description = "Purple mystic",
+		color = Color3.fromRGB(200, 100, 255), -- Purple
+		headShape = "Ball",
+		bodyShape = "Ball",
+		headSize = Vector3.new(6, 6, 6),
+		bodySize = Vector3.new(4, 4, 4),
+		material = Enum.Material.Neon,
+		unlocked = true,
+	},
+	{
+		id = "cube",
+		name = "Cubic Constrictor",
+		description = "Geometric and blocky",
+		color = Color3.fromRGB(255, 255, 100), -- Yellow
+		headShape = "Block",
+		bodyShape = "Block",
+		headSize = Vector3.new(5, 5, 5),
+		bodySize = Vector3.new(3.5, 3.5, 3.5),
+		material = Enum.Material.SmoothPlastic,
+		unlocked = true,
+	},
+	{
+		id = "diamond",
+		name = "Diamond Diamondback",
+		description = "Crystal clear beauty",
+		color = Color3.fromRGB(200, 255, 255), -- Cyan
+		headShape = "Ball",
+		bodyShape = "Ball",
+		headSize = Vector3.new(6, 6, 6),
+		bodySize = Vector3.new(4, 4, 4),
+		material = Enum.Material.Glass,
+		transparency = 0.3,
+		unlocked = true,
+	},
+	{
+		id = "obsidian",
+		name = "Obsidian Mamba",
+		description = "Dark and sleek",
+		color = Color3.fromRGB(50, 50, 50), -- Dark gray
+		headShape = "Ball",
+		bodyShape = "Ball",
+		headSize = Vector3.new(6, 6, 6),
+		bodySize = Vector3.new(4, 4, 4),
+		material = Enum.Material.Neon,
+		unlocked = true,
+	},
+	{
+		id = "rainbow",
+		name = "Rainbow Rattler",
+		description = "Multicolored wonder",
+		color = Color3.fromRGB(255, 100, 200), -- Pink (animated rainbow)
+		headShape = "Ball",
+		bodyShape = "Ball",
+		headSize = Vector3.new(6, 6, 6),
+		bodySize = Vector3.new(4, 4, 4),
+		material = Enum.Material.Neon,
+		rainbow = true, -- Special effect
+		unlocked = true,
+	},
+	{
+		id = "plasma",
+		name = "Plasma Phantom",
+		description = "Electric and deadly",
+		color = Color3.fromRGB(100, 255, 255), -- Electric blue
+		headShape = "Ball",
+		bodyShape = "Cylinder",
+		headSize = Vector3.new(6, 6, 6),
+		bodySize = Vector3.new(4, 4, 4),
+		material = Enum.Material.ForceField,
+		unlocked = true,
+	},
+}
+
+-- Get variant by ID
+function SnakeVariants.GetVariant(id)
+	for _, variant in ipairs(SnakeVariants) do
+		if variant.id == id then
+			return variant
+		end
+	end
+	return SnakeVariants[1] -- Default to Classic Viper
+end
+
+-- Get all unlocked variants
+function SnakeVariants.GetUnlockedVariants()
+	local unlocked = {}
+	for _, variant in ipairs(SnakeVariants) do
+		if variant.unlocked then
+			table.insert(unlocked, variant)
+		end
+	end
+	return unlocked
+end
+
+return SnakeVariants
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="7">
+        <Properties>
+          <string name="Name">WelcomeScreenUI</string>
+          <string name="Source"><![CDATA[-- WelcomeScreenUI.lua
+-- Shared UI creator for the welcome/variant selection screen
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+
+local player = Players.LocalPlayer
+local SnakeVariants = require(ReplicatedStorage.Modules.SnakeVariants)
+local remoteEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GameEvent")
+
+local WelcomeScreenUI = {}
+local _created = false
+
+local function ensurePlayerGui()
+	local pg = player:FindFirstChild("PlayerGui")
+	if not pg then
+		pg = Instance.new("PlayerGui")
+		pg.ResetOnSpawn = false
+		pg.Parent = player
+	end
+	return pg
+end
+
+function WelcomeScreenUI.Show()
+	if _created then
+		return
+	end
+	_created = true
+
+	local playerGui = ensurePlayerGui()
+
+	-- Avoid duplicate screen
+	if playerGui:FindFirstChild("WelcomeScreen") then
+		return
+	end
+
+	local selectedVariantId = "classic"
+
+	local function createWelcomeScreen()
+		local screenGui = Instance.new("ScreenGui")
+		screenGui.Name = "WelcomeScreen"
+		screenGui.ResetOnSpawn = false
+		screenGui.DisplayOrder = 100
+		screenGui.Parent = playerGui
+
+		local background = Instance.new("Frame")
+		background.Name = "Background"
+		background.Size = UDim2.new(1, 0, 1, 0)
+		background.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+		background.BackgroundTransparency = 0.1
+		background.BorderSizePixel = 0
+		background.Parent = screenGui
+
+		local title = Instance.new("TextLabel")
+		title.Name = "Title"
+		title.Size = UDim2.new(0, 600, 0, 80)
+		title.Position = UDim2.new(0.5, -300, 0.05, 0)
+		title.BackgroundTransparency = 1
+		title.Font = Enum.Font.GothamBold
+		title.Text = "SLITHER SIMULATOR"
+		title.TextColor3 = Color3.fromRGB(255, 255, 255)
+		title.TextSize = 48
+		title.TextStrokeTransparency = 0.5
+		title.Parent = screenGui
+
+		local subtitle = Instance.new("TextLabel")
+		subtitle.Name = "Subtitle"
+		subtitle.Size = UDim2.new(0, 600, 0, 40)
+		subtitle.Position = UDim2.new(0.5, -300, 0.12, 0)
+		subtitle.BackgroundTransparency = 1
+		subtitle.Font = Enum.Font.Gotham
+		subtitle.Text = "Choose Your Snake"
+		subtitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+		subtitle.TextSize = 24
+		subtitle.Parent = screenGui
+
+		local gridContainer = Instance.new("Frame")
+		gridContainer.Name = "GridContainer"
+		gridContainer.Size = UDim2.new(0, 900, 0, 450)
+		gridContainer.Position = UDim2.new(0.5, -450, 0.25, 0)
+		gridContainer.BackgroundTransparency = 1
+		gridContainer.Parent = screenGui
+
+		local gridLayout = Instance.new("UIGridLayout")
+		gridLayout.CellSize = UDim2.new(0, 170, 0, 200)
+		gridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
+		gridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		gridLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+		gridLayout.Parent = gridContainer
+
+		local unlocked = SnakeVariants.GetUnlockedVariants()
+		for _, variant in ipairs(unlocked) do
+			local card = Instance.new("Frame")
+			card.Name = "Card_" .. variant.id
+			card.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+			card.BorderSizePixel = 0
+			card.Parent = gridContainer
+
+			local corner = Instance.new("UICorner")
+			corner.CornerRadius = UDim.new(0, 8)
+			corner.Parent = card
+
+			local previewContainer = Instance.new("Frame")
+			previewContainer.Name = "PreviewContainer"
+			previewContainer.Size = UDim2.new(1, -20, 0.5, -10)
+			previewContainer.Position = UDim2.new(0, 10, 0, 10)
+			previewContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+			previewContainer.BorderSizePixel = 0
+			previewContainer.Parent = card
+
+			local previewCorner = Instance.new("UICorner")
+			previewCorner.CornerRadius = UDim.new(0, 6)
+			previewCorner.Parent = previewContainer
+
+			local headPreview = Instance.new("Frame")
+			headPreview.Name = "HeadPreview"
+			headPreview.Size = UDim2.new(0, 40, 0, 40)
+			headPreview.Position = UDim2.new(0.5, -20, 0.5, -20)
+			headPreview.BackgroundColor3 = variant.color
+			headPreview.BorderSizePixel = 0
+			headPreview.Parent = previewContainer
+
+			if variant.headShape == "Ball" then
+				local headCorner = Instance.new("UICorner")
+				headCorner.CornerRadius = UDim.new(1, 0)
+				headCorner.Parent = headPreview
+			end
+
+			for i = 1, 3 do
+				local segment = Instance.new("Frame")
+				segment.Name = "Segment" .. i
+				segment.Size = UDim2.new(0, 30, 0, 30)
+				segment.Position = UDim2.new(0.5, -15 - (i * 25), 0.5, -15)
+				segment.BackgroundColor3 = variant.color
+				segment.BorderSizePixel = 0
+				segment.Parent = previewContainer
+
+				if variant.bodyShape == "Ball" then
+					local segmentCorner = Instance.new("UICorner")
+					segmentCorner.CornerRadius = UDim.new(1, 0)
+					segmentCorner.Parent = segment
+				end
+			end
+
+			local nameLabel = Instance.new("TextLabel")
+			nameLabel.Name = "NameLabel"
+			nameLabel.Size = UDim2.new(1, -20, 0, 30)
+			nameLabel.Position = UDim2.new(0, 10, 0.55, 0)
+			nameLabel.BackgroundTransparency = 1
+			nameLabel.Font = Enum.Font.GothamBold
+			nameLabel.Text = variant.name
+			nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+			nameLabel.TextSize = 14
+			nameLabel.TextScaled = true
+			nameLabel.TextWrapped = true
+			nameLabel.Parent = card
+
+			local descLabel = Instance.new("TextLabel")
+			descLabel.Name = "DescLabel"
+			descLabel.Size = UDim2.new(1, -20, 0, 25)
+			descLabel.Position = UDim2.new(0, 10, 0.7, 0)
+			descLabel.BackgroundTransparency = 1
+			descLabel.Font = Enum.Font.Gotham
+			descLabel.Text = variant.description
+			descLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+			descLabel.TextSize = 11
+			descLabel.TextWrapped = true
+			descLabel.Parent = card
+
+			local selectedIndicator = Instance.new("Frame")
+			selectedIndicator.Name = "SelectedIndicator"
+			selectedIndicator.Size = UDim2.new(1, 4, 1, 4)
+			selectedIndicator.Position = UDim2.new(0, -2, 0, -2)
+			selectedIndicator.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
+			selectedIndicator.BorderSizePixel = 0
+			selectedIndicator.Visible = (variant.id == selectedVariantId)
+			selectedIndicator.ZIndex = 0
+			selectedIndicator.Parent = card
+
+			local selectedCorner = Instance.new("UICorner")
+			selectedCorner.CornerRadius = UDim.new(0, 10)
+			selectedCorner.Parent = selectedIndicator
+
+			local button = Instance.new("TextButton")
+			button.Name = "SelectButton"
+			button.Size = UDim2.new(1, 0, 1, 0)
+			button.BackgroundTransparency = 1
+			button.Text = ""
+			button.Parent = card
+
+			button.MouseButton1Click:Connect(function()
+				selectedVariantId = variant.id
+				for _, otherCard in ipairs(gridContainer:GetChildren()) do
+					if otherCard:IsA("Frame") and otherCard.Name:match("Card_") then
+						local indicator = otherCard:FindFirstChild("SelectedIndicator")
+						if indicator then
+							indicator.Visible = (otherCard.Name == "Card_" .. variant.id)
+						end
+					end
+				end
+			end)
+		end
+
+		local playButton = Instance.new("TextButton")
+		playButton.Name = "PlayButton"
+		playButton.Size = UDim2.new(0, 300, 0, 60)
+		playButton.Position = UDim2.new(0.5, -150, 0.85, 0)
+		playButton.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
+		playButton.BorderSizePixel = 0
+		playButton.Font = Enum.Font.GothamBold
+		playButton.Text = "PLAY"
+		playButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+		playButton.TextSize = 32
+		playButton.Parent = screenGui
+
+		local playCorner = Instance.new("UICorner")
+		playCorner.CornerRadius = UDim.new(0, 12)
+		playCorner.Parent = playButton
+
+		playButton.MouseButton1Click:Connect(function()
+			remoteEvent:FireServer("SelectSnakeVariant", selectedVariantId)
+			screenGui:Destroy()
+			StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+		end)
+	end
+
+	local ok, err = pcall(createWelcomeScreen)
+	if not ok then
+		warn("[WelcomeScreen] Failed to create screen:", err)
+		remoteEvent:FireServer("SelectSnakeVariant", selectedVariantId)
+	end
+
+	print("[WelcomeScreen] Initialized")
+end
+
+return WelcomeScreenUI
+]]></string>
         </Properties>
       </Item>
     </Item>
     <Item class="Folder" referent="8">
       <Properties>
+        <string name="Name">RemoteEvents</string>
+      </Properties>
+      <Item class="RemoteEvent" referent="9">
+        <Properties>
+          <string name="Name">GameEvent</string>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Folder" referent="10">
+      <Properties>
         <string name="Name">Shared</string>
       </Properties>
-      <Item class="ModuleScript" referent="9">
+      <Item class="ModuleScript" referent="11">
         <Properties>
           <string name="Name">BodySegmentPool</string>
           <string name="Source"><![CDATA[-- BodySegmentPool.lua
@@ -486,7 +885,7 @@ return BodySegmentPool
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="10">
+      <Item class="ModuleScript" referent="12">
         <Properties>
           <string name="Name">Maid</string>
           <string name="Source"><![CDATA[-- Maid.lua
@@ -559,7 +958,7 @@ return Maid
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="11">
+      <Item class="ModuleScript" referent="13">
         <Properties>
           <string name="Name">ObjectPool</string>
           <string name="Source"><![CDATA[-- ObjectPool.lua
@@ -638,7 +1037,7 @@ return ObjectPool
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="12">
+      <Item class="ModuleScript" referent="14">
         <Properties>
           <string name="Name">Signal</string>
           <string name="Source"><![CDATA[-- Signal.lua
@@ -722,7 +1121,7 @@ return Signal
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="13">
+      <Item class="ModuleScript" referent="15">
         <Properties>
           <string name="Name">SpatialGrid</string>
           <string name="Source"><![CDATA[-- SpatialGrid.lua
@@ -857,11 +1256,11 @@ return SpatialGrid
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="14">
+  <Item class="ServerScriptService" referent="16">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Script" referent="15">
+    <Item class="Script" referent="17">
       <Properties>
         <string name="Name">GameInitializer</string>
         <token name="RunContext">0</token>
@@ -887,7 +1286,14 @@ local ReviveService = require(ServerScriptService.GameSystems.ReviveService)
 
 -- Initialize services in dependency order
 CharacterManager:Initialize() -- Disable default characters first
-ArenaBuilder:Initialize() -- Create arena
+local arenaOk, arenaErr = pcall(function()
+	ArenaBuilder:Initialize() -- Create arena
+end)
+
+if not arenaOk then
+	warn("[GameInitializer] ArenaBuilder failed to initialize:", arenaErr)
+end
+
 PlayerDataManager:Initialize()
 ShieldManager:Initialize()
 LeaderboardService:Initialize()
@@ -907,7 +1313,14 @@ local remoteEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild(
 
 -- Client → Server event handlers
 remoteEvent.OnServerEvent:Connect(function(player, eventType, ...)
-	if eventType == "MoveSnake" then
+	if eventType == "SelectSnakeVariant" then
+		local variantId = ...
+		-- Set the player's selected variant
+		SnakeManager:SetPlayerVariant(player, variantId)
+		-- Create snake with selected variant and fixed spawn shield
+		SnakeManager:CreateSnake(player, 10)
+
+	elseif eventType == "MoveSnake" then
 		local direction = ...
 		SnakeManager:MoveSnake(player, direction)
 
@@ -982,11 +1395,11 @@ print("[GameInitializer] Server initialized successfully!")
 ]]></string>
       </Properties>
     </Item>
-    <Item class="Folder" referent="16">
+    <Item class="Folder" referent="18">
       <Properties>
         <string name="Name">GameSystems</string>
       </Properties>
-      <Item class="ModuleScript" referent="17">
+      <Item class="ModuleScript" referent="19">
         <Properties>
           <string name="Name">ArenaBuilder</string>
           <string name="Source"><![CDATA[-- ArenaBuilder.lua
@@ -1137,15 +1550,13 @@ function ArenaBuilder:SetupLighting()
 	-- Set ambient lighting for better visibility
 	local lighting = game:GetService("Lighting")
 
-	pcall(function()
+	local ok, err = pcall(function()
 		lighting.Ambient = Color3.fromRGB(100, 100, 120)
 		lighting.OutdoorAmbient = Color3.fromRGB(100, 100, 120)
 		lighting.Brightness = 2
 		lighting.GlobalShadows = false
-	end)
 
-	-- Add a sun for depth
-	pcall(function()
+		-- Add a skybox for depth
 		local sky = Instance.new("Sky")
 		sky.SkyboxBk = "rbxasset://textures/sky/sky512_bk.jpg"
 		sky.SkyboxDn = "rbxasset://textures/sky/sky512_dn.jpg"
@@ -1156,6 +1567,10 @@ function ArenaBuilder:SetupLighting()
 		sky.Parent = lighting
 	end)
 
+	if not ok then
+		warn("[ArenaBuilder] Lighting configuration skipped:", err)
+	end
+
 	print("[ArenaBuilder] Lighting configured")
 end
 
@@ -1163,7 +1578,7 @@ return ArenaBuilder
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="18">
+      <Item class="ModuleScript" referent="20">
         <Properties>
           <string name="Name">CharacterManager</string>
           <string name="Source"><![CDATA[-- CharacterManager.lua
@@ -1205,7 +1620,7 @@ return CharacterManager
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="19">
+      <Item class="ModuleScript" referent="21">
         <Properties>
           <string name="Name">FoodSpawner</string>
           <string name="Source"><![CDATA[-- FoodSpawner.lua
@@ -1404,7 +1819,7 @@ return FoodSpawner
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="20">
+      <Item class="ModuleScript" referent="22">
         <Properties>
           <string name="Name">LeaderboardService</string>
           <string name="Source"><![CDATA[-- LeaderboardService.lua
@@ -1605,7 +2020,7 @@ return LeaderboardService
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="21">
+      <Item class="ModuleScript" referent="23">
         <Properties>
           <string name="Name">PlayerDataManager</string>
           <string name="Source"><![CDATA[-- PlayerDataManager.lua
@@ -1894,7 +2309,7 @@ return PlayerDataManager
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="22">
+      <Item class="ModuleScript" referent="24">
         <Properties>
           <string name="Name">RankService</string>
           <string name="Source"><![CDATA[-- RankService.lua
@@ -1969,7 +2384,7 @@ return RankService
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="23">
+      <Item class="ModuleScript" referent="25">
         <Properties>
           <string name="Name">ReviveService</string>
           <string name="Source"><![CDATA[-- ReviveService.lua
@@ -2075,7 +2490,7 @@ return ReviveService
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="24">
+      <Item class="ModuleScript" referent="26">
         <Properties>
           <string name="Name">ShieldManager</string>
           <string name="Source"><![CDATA[-- ShieldManager.lua
@@ -2173,7 +2588,7 @@ return ShieldManager
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="25">
+      <Item class="ModuleScript" referent="27">
         <Properties>
           <string name="Name">SnakeManager</string>
           <string name="Source"><![CDATA[-- SnakeManager.lua
@@ -2184,6 +2599,7 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SnakeConfig = require(ReplicatedStorage.Modules.SnakeConfig)
+local SnakeVariants = require(ReplicatedStorage.Modules.SnakeVariants)
 local Maid = require(ReplicatedStorage.Shared.Maid)
 local SpatialGrid = require(ReplicatedStorage.Shared.SpatialGrid)
 local BodySegmentPool = require(ReplicatedStorage.Shared.BodySegmentPool)
@@ -2191,6 +2607,7 @@ local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local SnakeManager = {}
 SnakeManager._snakes = {} -- [player] = snakeData
+SnakeManager._playerVariants = {} -- [player] = variantId
 SnakeManager._spatialGrid = nil
 SnakeManager._bodySegmentPool = nil
 SnakeManager._snakeParent = nil
@@ -2226,18 +2643,7 @@ function SnakeManager:Initialize(dependencies)
 
 	self._bodySegmentPool = BodySegmentPool.new(self._snakeParent)
 
-	-- Create snakes for existing players
-	for _, player in ipairs(Players:GetPlayers()) do
-		task.spawn(function()
-			self:CreateSnake(player)
-		end)
-	end
-
-	-- Handle new players
-	Players.PlayerAdded:Connect(function(player)
-		task.wait(1) -- Wait for data to load
-		self:CreateSnake(player)
-	end)
+	-- DON'T auto-create snakes - wait for variant selection from welcome screen
 
 	-- Handle player leaving
 	Players.PlayerRemoving:Connect(function(player)
@@ -2260,27 +2666,41 @@ function SnakeManager:Initialize(dependencies)
 	print("[SnakeManager] Initialized")
 end
 
+-- Sets the player's selected snake variant
+function SnakeManager:SetPlayerVariant(player, variantId)
+	self._playerVariants[player] = variantId
+	print("[SnakeManager] Player", player.Name, "selected variant:", variantId)
+end
+
+-- Gets the player's selected variant (or default)
+function SnakeManager:GetPlayerVariant(player)
+	return self._playerVariants[player] or "classic"
+end
+
 -- Creates a snake for player
-function SnakeManager:CreateSnake(player)
+function SnakeManager:CreateSnake(player, spawnShieldDuration)
 	-- Cleanup existing snake
 	if self._snakes[player] then
 		self:KillSnake(player, nil, true)
 	end
 
-	-- Get player customization
+	-- Get player variant and customization
+	local variantId = self:GetPlayerVariant(player)
+	local variant = SnakeVariants.GetVariant(variantId)
 	local customization = self.PlayerDataManager:GetCustomization(player)
 	local rank = self.PlayerDataManager:GetRank(player)
 
 	-- Random spawn position
 	local spawnPos = self:_getRandomSpawnPosition()
 
-	-- Create head
+	-- Create head with variant properties
 	local head = Instance.new("Part")
 	head.Name = player.Name .. "_Head"
-	head.Size = Vector3.new(SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE)
-	head.Shape = Enum.PartType.Ball
-	head.Material = Enum.Material.Neon
-	head.Color = customization.color
+	head.Size = variant.headSize or Vector3.new(SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE)
+	head.Shape = (variant.headShape == "Block") and Enum.PartType.Block or Enum.PartType.Ball
+	head.Material = variant.material or Enum.Material.Neon
+	head.Color = variant.color
+	head.Transparency = variant.transparency or 0
 	head.CanCollide = false
 	head.Anchored = true
 	head.Position = spawnPos
@@ -2288,11 +2708,15 @@ function SnakeManager:CreateSnake(player)
 	head.BottomSurface = Enum.SurfaceType.Smooth
 	head.Parent = self._snakeParent
 
-	-- Create body segments
+	-- Create body segments with variant properties
 	local bodySegments = {}
 	for i = 1, SnakeConfig.INITIAL_SEGMENTS do
 		local segment = self._bodySegmentPool:Acquire()
-		segment.Color = customization.color
+		segment.Size = variant.bodySize or Vector3.new(SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE)
+		segment.Shape = (variant.bodyShape == "Block") and Enum.PartType.Block or (variant.bodyShape == "Cylinder" and Enum.PartType.Cylinder or Enum.PartType.Ball)
+		segment.Material = variant.material or Enum.Material.Neon
+		segment.Color = variant.color
+		segment.Transparency = variant.transparency or 0
 		segment.Position = spawnPos - Vector3.new(i * SnakeConfig.SEGMENT_SPACING, 0, 0)
 		table.insert(bodySegments, segment)
 
@@ -2309,6 +2733,7 @@ function SnakeManager:CreateSnake(player)
 		player = player,
 		head = head,
 		bodySegments = bodySegments,
+		variantId = variantId,
 		maid = maid,
 		speed = SnakeConfig.BASE_SPEED,
 		direction = Vector3.new(1, 0, 0), -- Initial direction: right
@@ -2318,7 +2743,7 @@ function SnakeManager:CreateSnake(player)
 		brakeCooldownRemaining = 0,
 		lastPosition = spawnPos,
 		lastMoveTime = os.clock(),
-		color = customization.color,
+		color = variant.color,
 		mouth = customization.mouth,
 		eyes = customization.eyes,
 		currentGold = 0, -- Session gold (resets on death)
@@ -2327,7 +2752,7 @@ function SnakeManager:CreateSnake(player)
 	self._snakes[player] = snake
 
 	-- Activate shield
-	local shieldDuration = self.RankService:GetShieldDuration(rank)
+	local shieldDuration = spawnShieldDuration or self.RankService:GetShieldDuration(rank)
 	self.ShieldManager:ActivateShield(player, shieldDuration)
 
 	print(string.format("[SnakeManager] Created snake for %s", player.Name))
@@ -2501,7 +2926,7 @@ function SnakeManager:_updateSnakes(dt)
 		snake.head.Position = newPosition
 
 		-- Update body segments (follow head)
-		self:_updateBodySegments(snake)
+		self:_updateBodySegments(snake, dt)
 
 		-- Check collisions (if not shielded)
 		if not self.ShieldManager:IsShielded(player) then
@@ -2514,27 +2939,35 @@ function SnakeManager:_updateSnakes(dt)
 end
 
 -- Updates body segments to follow head
-function SnakeManager:_updateBodySegments(snake)
+function SnakeManager:_updateBodySegments(snake, dt)
 	local positions = {snake.head.Position}
 
-	-- Calculate segment positions
+	-- Calculate segment positions - each segment follows the one in front
 	for i, segment in ipairs(snake.bodySegments) do
 		local targetPos = positions[i]
 		local currentPos = segment.Position
 
-		-- Interpolate towards target
-		local direction = (targetPos - currentPos).Unit
-		local distance = (targetPos - currentPos).Magnitude
+		-- Calculate direction and distance to target (previous segment)
+		local direction = (targetPos - currentPos)
+		local distance = direction.Magnitude
 
+		local newPos
+		-- Move segment toward target position, maintaining spacing
 		if distance > SnakeConfig.SEGMENT_SPACING then
-			local newPos = currentPos + direction * math.min(distance - SnakeConfig.SEGMENT_SPACING, snake.speed * RunService.Heartbeat:Wait())
-			segment.Position = newPos
-
-			-- Update spatial grid
-			self._spatialGrid:Insert(segment, newPos)
+			-- Calculate how far to move (don't overshoot)
+			local moveDistance = math.min(distance - SnakeConfig.SEGMENT_SPACING, snake.speed * dt)
+			newPos = currentPos + direction.Unit * moveDistance
+		else
+			-- Already at correct spacing
+			newPos = currentPos
 		end
 
-		table.insert(positions, segment.Position)
+		segment.Position = newPos
+
+		-- Update spatial grid
+		self._spatialGrid:Insert(segment, newPos)
+
+		table.insert(positions, newPos)
 	end
 end
 
@@ -2633,17 +3066,28 @@ function SnakeManager:_broadcastSnakeUpdates()
 	local updates = {}
 
 	for player, snake in pairs(self._snakes) do
+		local variant = SnakeVariants.GetVariant(snake.variantId)
 		updates[player.UserId] = {
 			headPos = snake.head.Position,
 			direction = snake.direction,
 			length = #snake.bodySegments,
-			color = snake.color,
+			color = variant.color,
+			variantId = snake.variantId,
+			headShape = variant.headShape,
+			bodyShape = variant.bodyShape,
+			headSize = variant.headSize,
+			bodySize = variant.bodySize,
+			material = variant.material,
+			transparency = variant.transparency,
 		}
 	end
 
 	-- Broadcast to all players
 	local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
 	if remoteEvent then
+		if not next(updates) then
+			return
+		end
 		for _, player in ipairs(Players:GetPlayers()) do
 			remoteEvent:FireClient(player, "UpdateSnakes", updates)
 		end
@@ -2660,7 +3104,7 @@ return SnakeManager
         </Properties>
       </Item>
     </Item>
-    <Item class="ModuleScript" referent="26">
+    <Item class="ModuleScript" referent="28">
       <Properties>
         <string name="Name">Tests</string>
         <string name="Source"><![CDATA[-- init.lua
@@ -2687,7 +3131,7 @@ end
 return results
 ]]></string>
       </Properties>
-      <Item class="ModuleScript" referent="27">
+      <Item class="ModuleScript" referent="29">
         <Properties>
           <string name="Name">FoodSpawner.spec</string>
           <string name="Source"><![CDATA[-- FoodSpawner.spec.lua
@@ -2792,7 +3236,7 @@ end
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="28">
+      <Item class="ModuleScript" referent="30">
         <Properties>
           <string name="Name">PlayerDataManager.spec</string>
           <string name="Source"><![CDATA[-- PlayerDataManager.spec.lua
@@ -2910,7 +3354,7 @@ end
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="29">
+      <Item class="ModuleScript" referent="31">
         <Properties>
           <string name="Name">RankService.spec</string>
           <string name="Source"><![CDATA[-- RankService.spec.lua
@@ -3023,7 +3467,7 @@ end
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="30">
+      <Item class="ModuleScript" referent="32">
         <Properties>
           <string name="Name">SnakeManager.spec</string>
           <string name="Source"><![CDATA[-- SnakeManager.spec.lua
@@ -3095,7 +3539,7 @@ end
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="31">
+      <Item class="ModuleScript" referent="33">
         <Properties>
           <string name="Name">SpatialGrid.spec</string>
           <string name="Source"><![CDATA[-- SpatialGrid.spec.lua
@@ -3192,20 +3636,20 @@ end
       </Item>
     </Item>
   </Item>
-  <Item class="StarterGui" referent="32">
+  <Item class="StarterGui" referent="34">
     <Properties>
       <string name="Name">StarterGui</string>
     </Properties>
-    <Item class="ScreenGui" referent="33">
+    <Item class="ScreenGui" referent="35">
       <Properties>
         <string name="Name">ScreenGui</string>
         <bool name="ResetOnSpawn">false</bool>
       </Properties>
-      <Item class="Folder" referent="34">
+      <Item class="Folder" referent="36">
         <Properties>
           <string name="Name">CustomizationMenu</string>
         </Properties>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="37">
           <Properties>
             <string name="Name">CustomizationController</string>
             <string name="Source"><![CDATA[--[[
@@ -3333,7 +3777,7 @@ return CustomizationController
 ]]></string>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="36">
+        <Item class="LocalScript" referent="38">
           <Properties>
             <string name="Name">CustomizationMenu</string>
             <string name="Source"><![CDATA[-- CustomizationMenu.client.lua
@@ -3550,7 +3994,7 @@ print("[CustomizationMenu] Initialized (Press C to open)")
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">CustomizationMenu</string>
             <string name="Source"><![CDATA[-- CustomizationMenu.lua
@@ -3709,11 +4153,11 @@ return {}
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="38">
+      <Item class="Folder" referent="40">
         <Properties>
           <string name="Name">HUD</string>
         </Properties>
-        <Item class="LocalScript" referent="39">
+        <Item class="LocalScript" referent="41">
           <Properties>
             <string name="Name">HUD</string>
             <string name="Source"><![CDATA[-- HUD.client.lua
@@ -3919,7 +4363,7 @@ print("[HUD] Initialized")
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="40">
+        <Item class="ModuleScript" referent="42">
           <Properties>
             <string name="Name">HUD</string>
             <string name="Source"><![CDATA[-- HUD.lua
@@ -4029,7 +4473,7 @@ return {}
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="41">
+        <Item class="ModuleScript" referent="43">
           <Properties>
             <string name="Name">HUDController</string>
             <string name="Source"><![CDATA[--[[
@@ -4144,11 +4588,11 @@ return HUDController
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="42">
+      <Item class="Folder" referent="44">
         <Properties>
           <string name="Name">Leaderboard</string>
         </Properties>
-        <Item class="LocalScript" referent="43">
+        <Item class="LocalScript" referent="45">
           <Properties>
             <string name="Name">Leaderboard</string>
             <string name="Source"><![CDATA[-- Leaderboard.client.lua
@@ -4366,7 +4810,7 @@ print("[Leaderboard] Initialized")
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">Leaderboard</string>
             <string name="Source"><![CDATA[-- Leaderboard.lua
@@ -4534,7 +4978,7 @@ return {}
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="45">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">LeaderboardUI</string>
             <string name="Source"><![CDATA[--[[
@@ -4651,11 +5095,11 @@ return LeaderboardUI
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="46">
+      <Item class="Folder" referent="48">
         <Properties>
           <string name="Name">RevivePrompt</string>
         </Properties>
-        <Item class="LocalScript" referent="47">
+        <Item class="LocalScript" referent="49">
           <Properties>
             <string name="Name">RevivePrompt</string>
             <string name="Source"><![CDATA[-- RevivePrompt.client.lua
@@ -4828,7 +5272,7 @@ print("[RevivePrompt] Initialized")
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="48">
+        <Item class="ModuleScript" referent="50">
           <Properties>
             <string name="Name">RevivePrompt</string>
             <string name="Source"><![CDATA[-- RevivePrompt.lua
@@ -4955,7 +5399,7 @@ return {}
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="49">
+        <Item class="ModuleScript" referent="51">
           <Properties>
             <string name="Name">RevivePromptController</string>
             <string name="Source"><![CDATA[--[[
@@ -5068,11 +5512,11 @@ return RevivePromptController
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="50">
+      <Item class="Folder" referent="52">
         <Properties>
           <string name="Name">ShieldTimer</string>
         </Properties>
-        <Item class="LocalScript" referent="51">
+        <Item class="LocalScript" referent="53">
           <Properties>
             <string name="Name">ShieldTimer</string>
             <string name="Source"><![CDATA[-- ShieldTimer.client.lua
@@ -5173,7 +5617,7 @@ print("[ShieldTimer] Initialized")
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="52">
+        <Item class="ModuleScript" referent="54">
           <Properties>
             <string name="Name">ShieldTimer</string>
             <string name="Source"><![CDATA[-- ShieldTimer.lua
@@ -5262,7 +5706,7 @@ return {}
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="53">
+        <Item class="ModuleScript" referent="55">
           <Properties>
             <string name="Name">ShieldTimerController</string>
             <string name="Source"><![CDATA[--[[
@@ -5352,17 +5796,32 @@ return ShieldTimerController
           </Properties>
         </Item>
       </Item>
+      <Item class="Folder" referent="56">
+        <Properties>
+          <string name="Name">WelcomeScreen</string>
+        </Properties>
+        <Item class="LocalScript" referent="57">
+          <Properties>
+            <string name="Name">WelcomeScreen</string>
+            <string name="Source"><![CDATA[local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local WelcomeScreenUI = require(ReplicatedStorage.Modules.WelcomeScreenUI)
+
+WelcomeScreenUI.Show()
+]]></string>
+          </Properties>
+        </Item>
+      </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="54">
+  <Item class="StarterPlayer" referent="58">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="55">
+    <Item class="StarterPlayerScripts" referent="59">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="ModuleScript" referent="56">
+      <Item class="ModuleScript" referent="60">
         <Properties>
           <string name="Name">CameraController</string>
           <string name="Source"><![CDATA[-- CameraController.lua
@@ -5380,9 +5839,15 @@ CameraController.ZoomLevel = 50 -- Starting zoom distance
 CameraController.MinZoom = 20
 CameraController.MaxZoom = 150
 CameraController.TargetPosition = Vector3.new(0, 0, 0)
+CameraController._initialized = false
 
 -- Initialize camera
 function CameraController:Initialize()
+	if self._initialized then
+		return
+	end
+	self._initialized = true
+
 	camera.CameraType = Enum.CameraType.Scriptable
 
 	-- Desktop zoom (mouse wheel)
@@ -5450,20 +5915,19 @@ function CameraController:_setupMobilePinchZoom()
 	end)
 end
 
-CameraController:Initialize()
-
 return CameraController
 ]]></string>
         </Properties>
       </Item>
-      <Item class="LocalScript" referent="57">
+      <Item class="LocalScript" referent="61">
         <Properties>
           <string name="Name">ClientInit</string>
-          <string name="Source"><![CDATA[-- init.client.lua
+          <string name="Source"><![CDATA[-- ClientInit.client.lua
 -- Client initialization script for Slither Simulator
 
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 
@@ -5471,6 +5935,23 @@ local player = Players.LocalPlayer
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
+
+-- Wait for player to select variant from welcome screen (or timeout after 5 seconds)
+print("[ClientInit] Waiting for WelcomeScreen...")
+local playerGui = player:WaitForChild("PlayerGui")
+local welcomeScreen = playerGui:WaitForChild("WelcomeScreen", 5)
+
+if welcomeScreen then
+	print("[ClientInit] WelcomeScreen found, waiting for player selection...")
+	-- Wait for welcome screen to be destroyed (player selected variant) with timeout
+	local startTime = tick()
+	while welcomeScreen.Parent and tick() - startTime < 120 do
+		task.wait(0.1)
+	end
+	print("[ClientInit] Welcome screen closed, starting game initialization...")
+else
+	warn("[ClientInit] WelcomeScreen not found, continuing anyway...")
+end
 
 -- Wait for scripts to load
 local playerScripts = player:WaitForChild("PlayerScripts")
@@ -5480,14 +5961,16 @@ local CameraController = require(playerScripts:WaitForChild("CameraController"))
 local SnakeController = require(playerScripts:WaitForChild("SnakeController"))
 local SnakeRenderer = require(playerScripts:WaitForChild("SnakeRenderer"))
 local MobileControls = require(playerScripts:WaitForChild("MobileControls"))
+local WelcomeScreenUI = require(ReplicatedStorage.Modules.WelcomeScreenUI)
 
 -- Initialize in order
 print("[Client] Initializing Slither Simulator client...")
 
 CameraController:Initialize()
 SnakeController:Initialize()
--- SnakeRenderer auto-initializes on require, no Initialize() call needed
+SnakeRenderer:Initialize()
 MobileControls:Initialize(SnakeController)
+WelcomeScreenUI.Show()
 
 -- Set camera to arena center initially
 CameraController:SetTargetPosition(Vector3.new(0, 0, 0))
@@ -5496,7 +5979,7 @@ print("[Client] Client initialized successfully!")
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="58">
+      <Item class="ModuleScript" referent="62">
         <Properties>
           <string name="Name">MobileControls</string>
           <string name="Source"><![CDATA[-- MobileControls.lua
@@ -5514,6 +5997,8 @@ local MobileControls = {}
 MobileControls.Enabled = false
 MobileControls.ThumbstickPosition = Vector2.new(0, 0)
 MobileControls.ActiveTouch = nil
+MobileControls._initialized = false
+MobileControls._snakeController = nil
 
 -- Check if mobile device
 local function isMobile()
@@ -5662,7 +6147,13 @@ function MobileControls:GetDirection()
 end
 
 -- Initialize
-function MobileControls:Initialize()
+function MobileControls:Initialize(snakeController)
+	if self._initialized then
+		return
+	end
+	self._initialized = true
+	self._snakeController = snakeController
+
 	if isMobile() then
 		self:CreateUI()
 
@@ -5670,20 +6161,18 @@ function MobileControls:Initialize()
 		RunService.Heartbeat:Connect(function()
 			local direction = self:GetDirection()
 			if direction.Magnitude > 0.1 then
-				local SnakeController = require(script.Parent.SnakeController)
-				SnakeController:SetDirection(direction)
+				local controller = self._snakeController or require(script.Parent.SnakeController)
+				controller:SetDirection(direction)
 			end
 		end)
 	end
 end
 
-MobileControls:Initialize()
-
 return MobileControls
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="59">
+      <Item class="ModuleScript" referent="63">
         <Properties>
           <string name="Name">SnakeController</string>
           <string name="Source"><![CDATA[-- SnakeController.lua
@@ -5705,12 +6194,18 @@ SnakeController.CurrentDirection = Vector3.new(1, 0, 0) -- Default: right
 SnakeController.LastSentDirection = Vector3.new(1, 0, 0)
 SnakeController.LastSendTime = 0
 SnakeController.MobileControls = nil -- Set by MobileControls script
+SnakeController._initialized = false
 
 -- Threshold for sending updates (to reduce network traffic)
 local UPDATE_THRESHOLD = 0.05 -- 20 Hz
 
 -- Initializes controller
 function SnakeController:Initialize()
+	if self._initialized then
+		return
+	end
+	self._initialized = true
+
 	-- Desktop input (mouse)
 	UserInputService.InputChanged:Connect(function(input, gameProcessed)
 		if gameProcessed then
@@ -5789,14 +6284,11 @@ function SnakeController:_sendDirectionUpdate()
 	end
 end
 
--- Initialize on spawn
-SnakeController:Initialize()
-
 return SnakeController
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="60">
+      <Item class="ModuleScript" referent="64">
         <Properties>
           <string name="Name">SnakeRenderer</string>
           <string name="Source"><![CDATA[-- SnakeRenderer.lua
@@ -5808,25 +6300,24 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local SnakeConfig = require(ReplicatedStorage.Modules.SnakeConfig)
+local SnakeVariants = require(ReplicatedStorage.Modules.SnakeVariants)
 local remoteEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GameEvent")
 
 local SnakeRenderer = {}
-SnakeRenderer.OtherSnakes = {} -- [userId] = {headPart, bodyParts, targetData}
-
--- Receives snake updates from server
-remoteEvent.OnClientEvent:Connect(function(eventType, data)
-	if eventType == "UpdateSnakes" then
-		SnakeRenderer:UpdateSnakes(data)
-	end
-end)
+SnakeRenderer.OtherSnakes = {} -- [userId] = {headPart, bodyParts, targetData, variantId}
+SnakeRenderer._initialized = false
+SnakeRenderer._connections = {}
 
 -- Updates snake data from server
 function SnakeRenderer:UpdateSnakes(snakeData)
 	for userId, data in pairs(snakeData) do
 		-- Skip local player (rendered separately)
 		if userId ~= player.UserId then
-			if not self.OtherSnakes[userId] then
-				self:_createSnakeVisuals(userId, data)
+			local variant = SnakeVariants.GetVariant(data.variantId)
+
+			if not self.OtherSnakes[userId] or self.OtherSnakes[userId].variantId ~= variant.id then
+				self:_removeSnakeVisuals(userId)
+				self:_createSnakeVisuals(userId, data, variant)
 			end
 
 			-- Update target data for interpolation
@@ -5835,7 +6326,8 @@ function SnakeRenderer:UpdateSnakes(snakeData)
 				snake.targetHeadPos = data.headPos
 				snake.targetDirection = data.direction
 				snake.targetLength = data.length
-				snake.targetColor = data.color
+				snake.targetColor = variant.color
+				snake.variant = variant
 			end
 		end
 	end
@@ -5849,19 +6341,22 @@ function SnakeRenderer:UpdateSnakes(snakeData)
 end
 
 -- Creates visual representation for other snake
-function SnakeRenderer:_createSnakeVisuals(userId, data)
+function SnakeRenderer:_createSnakeVisuals(userId, data, variant)
 	local snakesFolder = workspace:FindFirstChild("Snakes")
 	if not snakesFolder then
 		return
 	end
 
+	variant = variant or SnakeVariants.GetVariant(data.variantId)
+
 	-- Create head
 	local head = Instance.new("Part")
 	head.Name = "OtherSnake_" .. userId .. "_Head"
-	head.Size = Vector3.new(SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE)
-	head.Shape = Enum.PartType.Ball
-	head.Material = Enum.Material.Neon
-	head.Color = data.color
+	head.Size = variant.headSize or Vector3.new(SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE, SnakeConfig.HEAD_SIZE)
+	head.Shape = (variant.headShape == "Block") and Enum.PartType.Block or Enum.PartType.Ball
+	head.Material = variant.material or Enum.Material.Neon
+	head.Transparency = variant.transparency or 0
+	head.Color = variant.color
 	head.CanCollide = false
 	head.Anchored = true
 	head.Position = data.headPos
@@ -5872,10 +6367,17 @@ function SnakeRenderer:_createSnakeVisuals(userId, data)
 	for i = 1, data.length do
 		local segment = Instance.new("Part")
 		segment.Name = "OtherSnake_" .. userId .. "_Body_" .. i
-		segment.Size = Vector3.new(SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE)
-		segment.Shape = Enum.PartType.Ball
-		segment.Material = Enum.Material.Neon
-		segment.Color = data.color
+		segment.Size = variant.bodySize or Vector3.new(SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE)
+		if variant.bodyShape == "Block" then
+			segment.Shape = Enum.PartType.Block
+		elseif variant.bodyShape == "Cylinder" then
+			segment.Shape = Enum.PartType.Cylinder
+		else
+			segment.Shape = Enum.PartType.Ball
+		end
+		segment.Material = variant.material or Enum.Material.Neon
+		segment.Transparency = variant.transparency or 0
+		segment.Color = variant.color
 		segment.CanCollide = false
 		segment.Anchored = true
 		segment.Position = data.headPos - Vector3.new(i * SnakeConfig.SEGMENT_SPACING, 0, 0)
@@ -5891,7 +6393,9 @@ function SnakeRenderer:_createSnakeVisuals(userId, data)
 		currentHeadPos = data.headPos,
 		targetDirection = data.direction,
 		targetLength = data.length,
-		targetColor = data.color,
+		targetColor = variant.color,
+		variantId = variant.id,
+		variant = variant,
 	}
 end
 
@@ -5927,9 +6431,16 @@ function SnakeRenderer:_interpolateSnakes(dt)
 		while #snake.bodyParts < snake.targetLength do
 			local segment = Instance.new("Part")
 			segment.Name = "OtherSnake_" .. userId .. "_Body_" .. #snake.bodyParts + 1
-			segment.Size = Vector3.new(SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE)
-			segment.Shape = Enum.PartType.Ball
-			segment.Material = Enum.Material.Neon
+			segment.Size = snake.variant.bodySize or Vector3.new(SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE, SnakeConfig.SEGMENT_SIZE)
+			if snake.variant.bodyShape == "Block" then
+				segment.Shape = Enum.PartType.Block
+			elseif snake.variant.bodyShape == "Cylinder" then
+				segment.Shape = Enum.PartType.Cylinder
+			else
+				segment.Shape = Enum.PartType.Ball
+			end
+			segment.Material = snake.variant.material or Enum.Material.Neon
+			segment.Transparency = snake.variant.transparency or 0
 			segment.Color = snake.targetColor
 			segment.CanCollide = false
 			segment.Anchored = true
@@ -5959,11 +6470,24 @@ function SnakeRenderer:_interpolateSnakes(dt)
 end
 
 -- Initialize
-RunService.RenderStepped:Connect(function(dt)
-	SnakeRenderer:_interpolateSnakes(dt)
-end)
+function SnakeRenderer:Initialize()
+	if self._initialized then
+		return
+	end
+	self._initialized = true
 
-print("[SnakeRenderer] Initialized")
+	table.insert(self._connections, remoteEvent.OnClientEvent:Connect(function(eventType, data)
+		if eventType == "UpdateSnakes" then
+			self:UpdateSnakes(data)
+		end
+	end))
+
+	table.insert(self._connections, RunService.RenderStepped:Connect(function(dt)
+		self:_interpolateSnakes(dt)
+	end))
+
+	print("[SnakeRenderer] Initialized")
+end
 
 return SnakeRenderer
 ]]></string>
@@ -5971,22 +6495,22 @@ return SnakeRenderer
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="61">
+  <Item class="Workspace" referent="65">
     <Properties>
       <string name="Name">Workspace</string>
       <bool name="NeedsPivotMigration">false</bool>
     </Properties>
-    <Item class="Folder" referent="62">
+    <Item class="Folder" referent="66">
       <Properties>
         <string name="Name">Arena</string>
       </Properties>
     </Item>
-    <Item class="Folder" referent="63">
+    <Item class="Folder" referent="67">
       <Properties>
         <string name="Name">Food</string>
       </Properties>
     </Item>
-    <Item class="Folder" referent="64">
+    <Item class="Folder" referent="68">
       <Properties>
         <string name="Name">Snakes</string>
       </Properties>

@@ -9,7 +9,7 @@ local SnakeConfig = {
 	ROTATION_SPEED = 5, -- Radians per second for turning
 
 	-- Body Segments
-	SEGMENT_SPACING = 3, -- Studs between segments
+	SEGMENT_SPACING = 2.5, -- Studs between segments (compact tail)
 	INITIAL_SEGMENTS = 5, -- Starting body segment count
 	MAX_SEGMENTS = 100, -- Maximum snake length
 	SEGMENT_SIZE = 4, -- Studs diameter for body segments
