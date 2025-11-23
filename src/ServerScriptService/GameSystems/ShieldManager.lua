@@ -7,6 +7,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ShieldManager = {}
 ShieldManager._shields = {} -- [player] = {endTime, connection}
 
+-- Check if entity is an NPC
+local function isNPC(entity)
+	return type(entity) == "table" and entity.isNPC == true
+end
+
 -- Activates shield for player
 function ShieldManager:ActivateShield(player, duration)
 	-- Remove existing shield if any
@@ -19,10 +24,12 @@ function ShieldManager:ActivateShield(player, duration)
 		duration = duration,
 	}
 
-	-- Notify client
-	local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
-	if remoteEvent then
-		remoteEvent:FireClient(player, "ShieldActivated", duration)
+	-- Notify client (only for real players, not NPCs)
+	if not isNPC(player) then
+		local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
+		if remoteEvent then
+			remoteEvent:FireClient(player, "ShieldActivated", duration)
+		end
 	end
 
 	print(string.format("[ShieldManager] Shield activated for %s (%.1fs)", player.Name, duration))
@@ -40,10 +47,12 @@ function ShieldManager:DeactivateShield(player)
 	if self._shields[player] then
 		self._shields[player] = nil
 
-		-- Notify client
-		local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
-		if remoteEvent then
-			remoteEvent:FireClient(player, "ShieldDeactivated")
+		-- Notify client (only for real players, not NPCs)
+		if not isNPC(player) then
+			local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
+			if remoteEvent then
+				remoteEvent:FireClient(player, "ShieldDeactivated")
+			end
 		end
 
 		print(string.format("[ShieldManager] Shield deactivated for %s", player.Name))

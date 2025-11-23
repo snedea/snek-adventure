@@ -18,6 +18,7 @@ local FoodSpawner = require(ServerScriptService.GameSystems.FoodSpawner)
 local LeaderboardService = require(ServerScriptService.GameSystems.LeaderboardService)
 local SnakeManager = require(ServerScriptService.GameSystems.SnakeManager)
 local ReviveService = require(ServerScriptService.GameSystems.ReviveService)
+local NPCManager = require(ServerScriptService.GameSystems.NPCManager)
 
 -- Initialize services in dependency order
 CharacterManager:Initialize() -- Disable default characters first
@@ -42,6 +43,17 @@ SnakeManager:Initialize({
 	RankService = RankService,
 	LeaderboardService = LeaderboardService,
 })
+
+-- Initialize NPCManager
+NPCManager:Initialize({
+	SnakeManager = SnakeManager,
+	PlayerDataManager = PlayerDataManager,
+})
+
+-- Helper to check if entity is an NPC
+local function isNPC(entity)
+	return type(entity) == "table" and entity.isNPC == true
+end
 
 -- Setup RemoteEvents
 local remoteEvent = ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("GameEvent")
@@ -98,7 +110,14 @@ remoteEvent.OnServerEvent:Connect(function(player, eventType, ...)
 	elseif eventType == "ChangeMap" then
 		local mapName = ...
 		print("[GameInitializer] Map change requested by", player.Name, ":", mapName)
+		-- Clear NPCs when changing maps
+		NPCManager:ClearAllNPCs()
 		ArenaManager:LoadMap(mapName)
+
+	elseif eventType == "SetNPCSettings" then
+		local enabled, count = ...
+		print("[GameInitializer] NPC settings from", player.Name, ":", enabled, count)
+		NPCManager:SetNPCSettings(player, enabled, count)
 
 	else
 		warn("[GameInitializer] Unknown event type:", eventType)
@@ -107,6 +126,11 @@ end)
 
 -- Handle snake death → revival
 SnakeManager.SnakeDied:Connect(function(player, killer)
+	-- Skip FireClient and revival for NPCs (they auto-respawn via NPCManager)
+	if isNPC(player) then
+		return
+	end
+
 	-- Notify client of death
 	remoteEvent:FireClient(player, "SnakeDied", killer and killer.Name or "yourself")
 

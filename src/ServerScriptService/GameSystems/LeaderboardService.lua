@@ -34,6 +34,8 @@ function LeaderboardService:Initialize()
 			kills = 0,
 			longestLength = 0,
 			totalFood = 0,
+			name = player.Name,
+			isNPC = false,
 		}
 	end
 
@@ -43,6 +45,8 @@ function LeaderboardService:Initialize()
 			kills = 0,
 			longestLength = 0,
 			totalFood = 0,
+			name = player.Name,
+			isNPC = false,
 		}
 	end)
 
@@ -69,10 +73,27 @@ function LeaderboardService:_getCurrentMonth()
 	return string.format("%04d-%02d", time.year, time.month)
 end
 
+-- Check if entity is an NPC
+local function isNPC(entity)
+	return type(entity) == "table" and entity.isNPC == true
+end
+
 -- Increments a stat in cache
 function LeaderboardService:IncrementStat(player, statName, amount)
 	amount = amount or 1
 	local userId = player.UserId
+
+	-- Initialize cache for NPCs on first use
+	if isNPC(player) and not self._statsCache[userId] then
+		self._statsCache[userId] = {
+			kills = 0,
+			longestLength = 0,
+			totalFood = 0,
+			name = player.Name, -- Store name for display
+			isNPC = true,
+		}
+	end
+
 	local cache = self._statsCache[userId]
 
 	if cache then
@@ -87,6 +108,18 @@ end
 -- Sets stat in cache (for length, which can decrease)
 function LeaderboardService:SetStat(player, statName, value)
 	local userId = player.UserId
+
+	-- Initialize cache for NPCs on first use
+	if isNPC(player) and not self._statsCache[userId] then
+		self._statsCache[userId] = {
+			kills = 0,
+			longestLength = 0,
+			totalFood = 0,
+			name = player.Name, -- Store name for display
+			isNPC = true,
+		}
+	end
+
 	local cache = self._statsCache[userId]
 
 	if cache then
@@ -100,6 +133,11 @@ end
 function LeaderboardService:FlushStats(player)
 	if RunService:IsStudio() then
 		return -- Skip in Studio
+	end
+
+	-- Don't flush NPC stats to DataStore
+	if isNPC(player) then
+		return
 	end
 
 	local userId = player.UserId
@@ -181,6 +219,54 @@ function LeaderboardService:GetTopPlayers(statName, scope, count)
 			userId = tonumber(entry.key),
 			value = entry.value,
 		})
+	end
+
+	return topPlayers
+end
+
+-- Gets session leaderboard from in-memory cache (includes NPCs)
+function LeaderboardService:GetSessionLeaderboard(statName, count)
+	count = count or 10
+
+	-- Build list from cache
+	local entries = {}
+	for userId, cache in pairs(self._statsCache) do
+		local value = 0
+
+		if statName == "kills" then
+			value = cache.kills
+		elseif statName == "length" then
+			value = cache.longestLength
+		elseif statName == "food" then
+			value = cache.totalFood
+		end
+
+		if value > 0 then
+			table.insert(entries, {
+				userId = userId,
+				name = cache.name or "Unknown", -- NPCs have name stored, players need lookup
+				isNPC = cache.isNPC or false,
+				value = value,
+			})
+		end
+	end
+
+	-- Sort by value descending
+	table.sort(entries, function(a, b)
+		return a.value > b.value
+	end)
+
+	-- Limit to count
+	local topPlayers = {}
+	for i = 1, math.min(count, #entries) do
+		local entry = entries[i]
+		topPlayers[i] = {
+			rank = i,
+			userId = entry.userId,
+			name = entry.name,
+			isNPC = entry.isNPC,
+			value = entry.value,
+		}
 	end
 
 	return topPlayers

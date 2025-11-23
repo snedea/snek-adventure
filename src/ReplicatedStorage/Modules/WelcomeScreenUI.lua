@@ -36,6 +36,8 @@ function WelcomeScreenUI.Show()
 	end
 
 	local selectedVariantId = "classic"
+	local npcEnabled = false
+	local npcCount = 5
 
 	local function createWelcomeScreen()
 		local screenGui = Instance.new("ScreenGui")
@@ -104,7 +106,130 @@ function WelcomeScreenUI.Show()
 		mapLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 		mapLayout.Padding = UDim.new(0, 15)
 		mapLayout.Parent = mapContainer
-	
+
+		-- NPC Section
+		local npcTitle = Instance.new("TextLabel")
+		npcTitle.Name = "NPCTitle"
+		npcTitle.Size = UDim2.new(0, 600, 0, 25)
+		npcTitle.Position = UDim2.new(0.5, -300, 0.72, 0)
+		npcTitle.BackgroundTransparency = 1
+		npcTitle.Font = Enum.Font.GothamBold
+		npcTitle.Text = "NPCs"
+		npcTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+		npcTitle.TextSize = 18
+		npcTitle.Parent = screenGui
+
+		local npcContainer = Instance.new("Frame")
+		npcContainer.Name = "NPCContainer"
+		npcContainer.Size = UDim2.new(0, 600, 0, 50)
+		npcContainer.Position = UDim2.new(0.5, -300, 0.76, 0)
+		npcContainer.BackgroundTransparency = 1
+		npcContainer.Parent = screenGui
+
+		local npcLayout = Instance.new("UIListLayout")
+		npcLayout.FillDirection = Enum.FillDirection.Horizontal
+		npcLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		npcLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+		npcLayout.Padding = UDim.new(0, 20)
+		npcLayout.Parent = npcContainer
+
+		-- NPC Toggle Button
+		local npcToggle = Instance.new("TextButton")
+		npcToggle.Name = "NPCToggle"
+		npcToggle.Size = UDim2.new(0, 200, 0, 50)
+		npcToggle.BackgroundColor3 = npcEnabled and Color3.fromRGB(80, 80, 100) or Color3.fromRGB(50, 50, 60)
+		npcToggle.BorderSizePixel = 0
+		npcToggle.Font = Enum.Font.GothamBold
+		npcToggle.Text = npcEnabled and "NPCs: ON" or "NPCs: OFF"
+		npcToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+		npcToggle.TextSize = 16
+		npcToggle.Parent = npcContainer
+
+		local npcToggleCorner = Instance.new("UICorner")
+		npcToggleCorner.CornerRadius = UDim.new(0, 8)
+		npcToggleCorner.Parent = npcToggle
+
+		-- NPC Count Selector (only visible when NPCs are enabled)
+		local npcCountFrame = Instance.new("Frame")
+		npcCountFrame.Name = "NPCCountFrame"
+		npcCountFrame.Size = UDim2.new(0, 250, 0, 50)
+		npcCountFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+		npcCountFrame.BorderSizePixel = 0
+		npcCountFrame.Visible = npcEnabled
+		npcCountFrame.Parent = npcContainer
+
+		local npcCountCorner = Instance.new("UICorner")
+		npcCountCorner.CornerRadius = UDim.new(0, 8)
+		npcCountCorner.Parent = npcCountFrame
+
+		local npcCountLabel = Instance.new("TextLabel")
+		npcCountLabel.Name = "NPCCountLabel"
+		npcCountLabel.Size = UDim2.new(0, 100, 1, 0)
+		npcCountLabel.Position = UDim2.new(0.5, -50, 0, 0)
+		npcCountLabel.BackgroundTransparency = 1
+		npcCountLabel.Font = Enum.Font.GothamBold
+		npcCountLabel.Text = tostring(npcCount)
+		npcCountLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		npcCountLabel.TextSize = 24
+		npcCountLabel.Parent = npcCountFrame
+
+		-- Decrease button
+		local decreaseButton = Instance.new("TextButton")
+		decreaseButton.Name = "DecreaseButton"
+		decreaseButton.Size = UDim2.new(0, 50, 1, 0)
+		decreaseButton.Position = UDim2.new(0, 0, 0, 0)
+		decreaseButton.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
+		decreaseButton.BorderSizePixel = 0
+		decreaseButton.Font = Enum.Font.GothamBold
+		decreaseButton.Text = "<"
+		decreaseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		decreaseButton.TextSize = 24
+		decreaseButton.Parent = npcCountFrame
+
+		local decreaseCorner = Instance.new("UICorner")
+		decreaseCorner.CornerRadius = UDim.new(0, 8)
+		decreaseCorner.Parent = decreaseButton
+
+		-- Increase button
+		local increaseButton = Instance.new("TextButton")
+		increaseButton.Name = "IncreaseButton"
+		increaseButton.Size = UDim2.new(0, 50, 1, 0)
+		increaseButton.Position = UDim2.new(1, -50, 0, 0)
+		increaseButton.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
+		increaseButton.BorderSizePixel = 0
+		increaseButton.Font = Enum.Font.GothamBold
+		increaseButton.Text = ">"
+		increaseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		increaseButton.TextSize = 24
+		increaseButton.Parent = npcCountFrame
+
+		local increaseCorner = Instance.new("UICorner")
+		increaseCorner.CornerRadius = UDim.new(0, 8)
+		increaseCorner.Parent = increaseButton
+
+		-- NPC Toggle Click Handler
+		npcToggle.MouseButton1Click:Connect(function()
+			npcEnabled = not npcEnabled
+			npcToggle.Text = npcEnabled and "NPCs: ON" or "NPCs: OFF"
+			npcToggle.BackgroundColor3 = npcEnabled and Color3.fromRGB(80, 80, 100) or Color3.fromRGB(50, 50, 60)
+			npcCountFrame.Visible = npcEnabled
+		end)
+
+		-- NPC Count Button Handlers
+		decreaseButton.MouseButton1Click:Connect(function()
+			if npcCount > 1 then
+				npcCount = npcCount - 1
+				npcCountLabel.Text = tostring(npcCount)
+			end
+		end)
+
+		increaseButton.MouseButton1Click:Connect(function()
+			if npcCount < 20 then
+				npcCount = npcCount + 1
+				npcCountLabel.Text = tostring(npcCount)
+			end
+		end)
+
 		for mapName, mapData in pairs(MapConfig.Maps) do
 			local mapButton = Instance.new("TextButton")
 			mapButton.Name = mapName .. "Button"
@@ -262,7 +387,7 @@ function WelcomeScreenUI.Show()
 		local playButton = Instance.new("TextButton")
 		playButton.Name = "PlayButton"
 		playButton.Size = UDim2.new(0, 300, 0, 55)
-		playButton.Position = UDim2.new(0.5, -150, 0.75, 0)
+		playButton.Position = UDim2.new(0.5, -150, 0.84, 0)
 		playButton.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
 		playButton.BorderSizePixel = 0
 		playButton.Font = Enum.Font.GothamBold
@@ -278,6 +403,7 @@ function WelcomeScreenUI.Show()
 		playButton.MouseButton1Click:Connect(function()
 			remoteEvent:FireServer("SelectSnakeVariant", selectedVariantId)
 			remoteEvent:FireServer("ChangeMap", selectedMapName)
+			remoteEvent:FireServer("SetNPCSettings", npcEnabled, npcCount)
 			screenGui:Destroy()
 			StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
 		end)

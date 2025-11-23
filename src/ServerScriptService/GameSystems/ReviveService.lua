@@ -8,8 +8,17 @@ ReviveService._activePrompts = {} -- [player] = {endTime}
 
 local PROMPT_TIMEOUT = 10 -- Seconds to accept/decline
 
+-- Check if entity is an NPC
+local function isNPC(entity)
+	return type(entity) == "table" and entity.isNPC == true
+end
+
 -- Offers revival to player
 function ReviveService:OfferRevival(player, PlayerDataManager, SnakeManager, ShieldManager, RankService)
+	-- NPCs auto-respawn via NPCManager, skip revival system
+	if isNPC(player) then
+		return false
+	end
 	-- Check if player has donuts
 	local donuts = PlayerDataManager:GetDonuts(player)
 	

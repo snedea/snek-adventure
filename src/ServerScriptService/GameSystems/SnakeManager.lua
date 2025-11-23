@@ -84,7 +84,12 @@ function SnakeManager:GetPlayerVariant(player)
 	return self._playerVariants[player] or "classic"
 end
 
--- Creates a snake for player
+-- Check if entity is an NPC
+local function isNPC(entity)
+	return type(entity) == "table" and entity.isNPC == true
+end
+
+-- Creates a snake for player or NPC
 function SnakeManager:CreateSnake(player, spawnShieldDuration)
 	-- Cleanup existing snake
 	if self._snakes[player] then
@@ -94,8 +99,16 @@ function SnakeManager:CreateSnake(player, spawnShieldDuration)
 	-- Get player variant and customization
 	local variantId = self:GetPlayerVariant(player)
 	local variant = SnakeVariants.GetVariant(variantId)
-	local customization = self.PlayerDataManager:GetCustomization(player)
-	local rank = self.PlayerDataManager:GetRank(player)
+
+	-- NPCs don't have PlayerData - use defaults
+	local customization, rank
+	if isNPC(player) then
+		customization = {color = variant.color} -- Use variant color
+		rank = 1 -- Default rank for NPCs
+	else
+		customization = self.PlayerDataManager:GetCustomization(player)
+		rank = self.PlayerDataManager:GetRank(player)
+	end
 
 	-- Random spawn position
 	local spawnPos = self:_getRandomSpawnPosition()
@@ -251,7 +264,8 @@ function SnakeManager:ActivateBoost(player)
 	snake.brakeActive = false -- Can't boost and brake simultaneously
 	snake.speed = SnakeConfig.BASE_SPEED * SnakeConfig.BOOST_MULTIPLIER
 
-	local rank = self.PlayerDataManager:GetRank(player)
+	-- Get rank-based cooldown (NPCs use default rank)
+	local rank = isNPC(player) and 1 or self.PlayerDataManager:GetRank(player)
 	local cooldown = self.RankService:GetBoostCooldown(rank)
 	snake.boostCooldownRemaining = cooldown
 
@@ -273,7 +287,8 @@ function SnakeManager:ActivateBrake(player)
 	snake.boostActive = false -- Can't boost and brake simultaneously
 	snake.speed = SnakeConfig.BASE_SPEED * SnakeConfig.BRAKE_MULTIPLIER
 
-	local rank = self.PlayerDataManager:GetRank(player)
+	-- Get rank-based cooldown (NPCs use default rank)
+	local rank = isNPC(player) and 1 or self.PlayerDataManager:GetRank(player)
 	local cooldown = self.RankService:GetBrakeCooldown(rank)
 	snake.brakeCooldownRemaining = cooldown
 
@@ -296,10 +311,12 @@ function SnakeManager:ActivatePowerUp(player, powerUpType, data)
 		self.ShieldManager:ActivateShield(player, duration)
 	end
 	
-	-- Notify client
-	local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
-	if remoteEvent then
-		remoteEvent:FireClient(player, "PowerUpActivated", powerUpType, duration)
+	-- Notify client (only for real players, not NPCs)
+	if not isNPC(player) then
+		local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
+		if remoteEvent then
+			remoteEvent:FireClient(player, "PowerUpActivated", powerUpType, duration)
+		end
 	end
 	
 	print(string.format("[SnakeManager] %s collected %s", player.Name, powerUpType))
@@ -330,6 +347,7 @@ function SnakeManager:GrowSnake(player, segmentCount)
 	end
 
 	self.SnakeGrew:Fire(player, #snake.bodySegments)
+	-- Update leaderboard for both players and NPCs
 	self.LeaderboardService:SetStat(player, "length", #snake.bodySegments)
 end
 
@@ -349,8 +367,12 @@ function SnakeManager:KillSnake(player, killer, silent)
 
 	-- Update stats
 	if killer and killer ~= player then
+		-- Update leaderboard for both players and NPCs
 		self.LeaderboardService:IncrementStat(killer, "kills", 1)
-		self.PlayerDataManager:IncrementStat(killer, "totalKills", 1)
+		-- Only update PlayerDataManager for real players
+		if not isNPC(killer) then
+			self.PlayerDataManager:IncrementStat(killer, "totalKills", 1)
+		end
 	end
 
 	-- Cleanup
@@ -509,7 +531,8 @@ end
 
 -- Checks food collection with magnet
 function SnakeManager:_checkFoodCollection(player, snake)
-	local rank = self.PlayerDataManager:GetRank(player)
+	-- NPCs use default rank, real players use their actual rank
+	local rank = isNPC(player) and 1 or self.PlayerDataManager:GetRank(player)
 	local magnetRange = self.RankService:GetMagnetRange(rank) * (snake.magnetMultiplier or 1)
 
 	local nearbyFood = self.FoodSpawner:GetFoodInRange(snake.head.Position, magnetRange)
@@ -529,33 +552,42 @@ function SnakeManager:_checkFoodCollection(player, snake)
 			local FoodConfig = require(ReplicatedStorage.Modules.FoodConfig)
 			local goldReward = FoodConfig.CalculateReward(foodData.data, rank)
 
-			self.PlayerDataManager:AddGold(player, goldReward)
+			-- Only update PlayerDataManager for real players
+			if not isNPC(player) then
+				self.PlayerDataManager:AddGold(player, goldReward)
+			end
 			snake.currentGold = (snake.currentGold or 0) + goldReward
 
 			-- Grow snake
 			self:GrowSnake(player, SnakeConfig.FOOD_GROWTH_SEGMENTS)
 
-			-- Update stats
+			-- Update leaderboard stats for both players and NPCs
 			self.LeaderboardService:IncrementStat(player, "food", 1)
-			self.PlayerDataManager:IncrementStat(player, "totalFood", 1)
 
-			-- Check rank up
-			local currentRank = rank
-			local newRank = self.RankService:CheckRankUp(currentRank, self.PlayerDataManager:GetGold(player))
-			if newRank > currentRank then
-				self.PlayerDataManager:SetRank(player, newRank)
+			-- Update persistent stats and check rank up (only for real players)
+			if not isNPC(player) then
+				self.PlayerDataManager:IncrementStat(player, "totalFood", 1)
 
-				-- Notify client
-				local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
-				if remoteEvent then
-					remoteEvent:FireClient(player, "RankUp", newRank)
+				-- Check rank up
+				local currentRank = rank
+				local newRank = self.RankService:CheckRankUp(currentRank, self.PlayerDataManager:GetGold(player))
+				if newRank > currentRank then
+					self.PlayerDataManager:SetRank(player, newRank)
+
+					-- Notify client
+					local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
+					if remoteEvent then
+						remoteEvent:FireClient(player, "RankUp", newRank)
+					end
 				end
 			end
 
-			-- Notify client
-			local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
-			if remoteEvent then
-				remoteEvent:FireClient(player, "FoodCollected", goldReward)
+			-- Notify client (only for real players)
+			if not isNPC(player) then
+				local remoteEvent = ReplicatedStorage:FindFirstChild("RemoteEvents") and ReplicatedStorage.RemoteEvents:FindFirstChild("GameEvent")
+				if remoteEvent then
+					remoteEvent:FireClient(player, "FoodCollected", goldReward)
+				end
 			end
 
 			self.FoodCollected:Fire(player, goldReward)
